@@ -1,14 +1,27 @@
-*.un~
-*.swp
-tags
-target
-project/boot
-.history
-project.vim
-*.old
-.idea
-.project
-.classpath
-.metadata/
+# sbt/bsp
 .bsp
-.metals
+
+# Eclipse
+.classpath
+.project
+.settings/
+
+# Intellij
+.idea/
+*.iml
+*.iws
+
+# VSCode
+**metals*
+**bloop*
+**vscode*
+
+# Maven
+target/
+
+*.class
+
+*.log
+
+# App docker volume
+app-vol/
