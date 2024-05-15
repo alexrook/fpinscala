@@ -1,7 +1,7 @@
-ThisBuild / scalaVersion := "2.13.11"
+ThisBuild / scalaVersion := "2.13.14"
 
 lazy val root = (project in file("."))
-  .aggregate(exercises, answers)
+  .aggregate(exercises)
   .settings(
     name := "fpinscala"
   )
@@ -11,7 +11,3 @@ lazy val exercises = (project in file("exercises"))
     name := "exercises"
   )
 
-lazy val answers = (project in file("answers"))
-  .settings(
-    name := "answers"
-  )
