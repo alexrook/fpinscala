@@ -43,4 +43,42 @@ class GettingStartedTest extends AnyWordSpec {
 
   }
 
+  "PolymorphicFunctions.isSorted" when {
+
+    def gt(l: Int, r: Int): Boolean =
+      if (l <= r) {
+        true
+      } else {
+        false
+      }
+
+    "receives an empty array" should {
+      "return true" in {
+        assert(PolymorphicFunctions.isSorted(Array.empty[Int], gt))
+      }
+    }
+
+    "gets an array of one element" should {
+      "return true" in {
+        assert(PolymorphicFunctions.isSorted(Array(1), gt))
+      }
+    }
+
+    "gets a sorted array" should {
+      "return true" in {
+        assert(PolymorphicFunctions.isSorted(Array(1, 2, 3), gt))
+        assert(PolymorphicFunctions.isSorted(Array(1, 3, 3, 4), gt))
+      }
+    }
+
+    "gets an unsorted array" should {
+      "return false" in {
+        assertResult(false)(PolymorphicFunctions.isSorted(Array(11, 1, 3, 3, 4), gt))
+        assertResult(false)(PolymorphicFunctions.isSorted(Array(0, 1, 3, 3, -11, 4), gt))
+        assertResult(false)(PolymorphicFunctions.isSorted(Array(1, 0), gt))
+      }
+    }
+
+  }
+
 }

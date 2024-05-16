@@ -1,5 +1,7 @@
 package fpinscala.gettingstarted
 
+import fpinscala.iomonad.IO1.helpstring
+
 // A comment!
 /* Another comment */
 /** A documentation comment */
@@ -158,7 +160,21 @@ object PolymorphicFunctions {
 
   // Exercise 2: Implement a polymorphic function to check whether
   // an `Array[A]` is sorted
-  def isSorted[A](as: Array[A], gt: (A, A) => Boolean): Boolean = ???
+  def isSorted[A](as: Array[A], gt: (A, A) => Boolean): Boolean = {
+    def loop(pe: A, xa: Seq[A]): Boolean =
+      xa match {
+        case Nil                          => true
+        case head +: rest if gt(pe, head) => loop(head, rest)
+        case _ => false
+      }
+
+    if (as.isEmpty) {
+      true
+    } else {
+      loop(as.head, as.tail)
+    }
+
+  }
 
   // Polymorphic functions are often so constrained by their type
   // that they only have one implementation! Here's an example:
