@@ -1,0 +1,136 @@
+package fpinscala.datastructures
+
+import org.scalatest.wordspec.AnyWordSpec
+
+class ListTest extends AnyWordSpec {
+
+  import fpinscala.datastructures.List._
+  import fpinscala.datastructures.{List => CL}
+
+  "Custom List" when {
+    "tail method called" should {
+      "return tail for non empty lists" in {
+        assert(
+          tail(CL(1, 2, 3, 4)) match {
+            case Cons(_, _) => true
+            case Nil        => false
+          }
+        )
+        assert(
+          tail(CL(1)) match {
+            case Cons(_, _) => false
+            case Nil        => true
+          }
+        )
+      }
+
+      "throw error for empty list" in {
+        assertThrows[NoSuchElementException](
+          tail(Nil) match {
+            case Cons(_, _) => true
+            case Nil        => false
+          }
+        )
+      }
+    }
+
+  }
+
+  "drop method called" should {
+    "retun the same List if n==0" in {
+      val l = CL(1, 2, 3)
+      assert(drop(l, 0) == l)
+    }
+
+    "retun Nil for empty Lists" in {
+      assert(drop(Nil, 0) == Nil)
+    }
+
+    "retun right results for non empty Lists" in {
+      assert(drop(CL(1, 2, 3), 2) == CL(3))
+      assert(drop(CL(1, 2, 3, 4, 5), 2) == CL(3, 4, 5))
+    }
+  }
+
+  "init method called" should {
+    "throw an error for empty List" in {
+      assertThrows[NoSuchElementException](init(Nil))
+    }
+
+    "return Nil for one elem List" in {
+      assert(init(CL(1)) == Nil)
+    }
+
+    "return List with first elem if arg has two elems" in {
+      assert(init(CL(1, 2)) == CL(1))
+    }
+
+    "return correct results for non empty Lists" in {
+      assert(init(CL(1, 2, 3)) == CL(1, 2))
+      assert(init(CL(7, 2, 3, 5)) == CL(7, 2, 3))
+    }
+
+  }
+
+  "foldRight method" should {
+    "run from right to left" in {
+      assert(
+        CL
+          .foldRight(CL(1, 2, 3), "") {
+            case (e, acc) => s"$acc $e"
+          }
+          .trim == "3 2 1"
+      )
+    }
+  }
+
+  "foldRight2 method" should {
+    "run from right to left" in {
+      assert(
+        CL
+          .foldRight2(CL(1, 2, 3), "") {
+            case (e, acc) => s"$acc $e"
+          }
+          .trim == "3 2 1"
+      )
+    }
+  }
+
+  "foldLeft method" should {
+    "run from left to right" in {
+      assert(
+        CL
+          .foldLeft(CL(1, 2, 3), "") {
+            case (acc, elem) => s"$acc $elem"
+          }
+          .trim == "1 2 3"
+      )
+    }
+  }
+
+  "reverse method" should {
+    "return Nil for empty List" in {
+      assert(reverse(Nil) == Nil)
+    }
+
+    "return correct results for non empty List's" in {
+      assert(reverse(CL(1)) == CL(1))
+      assert(reverse(CL(1, 2)) == CL(2, 1))
+      assert(reverse(CL(1, 2, 3)) == CL(3, 2, 1))
+    }
+
+  }
+
+  "append method" should {
+    "return two list concatenation" in {
+      assert(append(CL(1, 2, 3), CL(4, 5, 6)) == CL(1, 2, 3, 4, 5, 6))
+    }
+  }
+
+//   "appendLeft method" should {
+//     "return two list concatenation" in {
+//       assert(appendLeft(CL(1, 2, 3), CL(4, 5, 6)) == CL(1, 2, 3, 4, 5, 6))
+//     }
+//   }
+
+}
