@@ -127,7 +127,7 @@ object List { // `List` companion object. Contains functions for creating and wo
   def foldLeft2[A, B](l: List[A], z: B)(f: (B, A) => B): B = ??? // TODO: foldLeft via foldRight
 
   // Implement append in terms of either foldLeft or foldRight.
-  def appendLeft[A](a1: List[A], a2: List[A]): List[A] =
+  def appendLeft[A](a1: List[A], a2: List[A]): List[A] = //FIXME: test fails
     foldLeft(a1, a2) {
       case (acc: List[A], elem) => Cons(elem, acc)
     }
