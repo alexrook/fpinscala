@@ -1,5 +1,6 @@
 package fpinscala.datastructures
 
+import fpinscala.iomonad.IO1.IO
 import org.scalatest.wordspec.AnyWordSpec
 
 class ListTest extends AnyWordSpec {
@@ -127,10 +128,77 @@ class ListTest extends AnyWordSpec {
     }
   }
 
-//   "appendLeft method" should {
-//     "return two list concatenation" in {
-//       assert(appendLeft(CL(1, 2, 3), CL(4, 5, 6)) == CL(1, 2, 3, 4, 5, 6))
-//     }
-//   }
+  "appendViaFoldLeft method" should {
+    "return two list concatenation" in {
+      assert(appendViaFoldLeft(CL(1, 2, 3), CL(4, 5, 6)) == CL(1, 2, 3, 4, 5, 6))
+    }
+  }
+
+  "appendViaFoldRight method" should {
+    "return two list concatenation" in {
+      assert(appendViaFoldRight(CL(1, 2, 3), CL(4, 5, 6)) == CL(1, 2, 3, 4, 5, 6))
+    }
+  }
+
+  "the map method" should {
+    "return Nil for an empty List" in {
+      assert(map(Nil)(identity) == Nil)
+    }
+
+    "return correct result for one elem List" in {
+      assert(map(CL(1))(_ + 1) == CL(2))
+    }
+
+    "return correct result for non empty List's" in {
+      assert(map(CL(1, 3))(_ + 1) == CL(2, 4))
+      assert(map(CL(5, 1, 3))(_ + 1) == CL(6, 2, 4))
+    }
+  }
+
+  "the filter method" should {
+    "return Nil for an empty List" in {
+      assert(filter(Nil)(identity) == Nil)
+    }
+
+    "return correct result for one elem List" in {
+      assert(filter(CL(1))(_ == 1) == CL(1))
+    }
+
+    "return correct result for non empty List's" in {
+      assert(filter(CL(1, 3))(_ > 1) == CL(3))
+      assert(filter(CL(5, 1, 3))(_ > 1) == CL(5, 3))
+    }
+  }
+
+  "the flatMap method" should {
+    "return Nil for an empty List" in {
+      assert(flatMap(Nil)(CL(_)) == Nil)
+    }
+
+    "return correct result for one elem List" in {
+      assert(flatMap(CL(1))(x => CL(x, x)) == CL(1, 1))
+    }
+
+    "return correct result for non empty List's" in {
+      assert(flatMap(List(1, 2, 3))(x => List(x, x)) == CL(1, 1, 2, 2, 3, 3))
+      assert(flatMap(CL(5, 1, 3))(x => List(x, x)) == CL(5, 5, 1, 1, 3, 3))
+    }
+  }
+
+  "the addCorresponding method" should {
+    "return Nil for an empty List" in {
+      assert(addCorresponding(Nil, CL(1)) == Nil)
+    }
+
+    "return result for one elem List's" in {
+      assert(addCorresponding(CL(1), CL(2)) == CL(3))
+    }
+
+    "return correct result for non empty List's" in {
+      assert(addCorresponding(CL(1, 2, 3), CL(4, 5, 6)) == CL(5, 7, 9))
+      assert(addCorresponding(CL(1, 2, 3, 5), CL(4, 5, 6)) == CL(5, 7, 9, 5))
+      assert(addCorresponding(CL(1, 2, 3), CL(4, 5)) == CL(5, 7, 3))
+    }
+  }
 
 }

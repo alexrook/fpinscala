@@ -127,10 +127,106 @@ object List { // `List` companion object. Contains functions for creating and wo
   def foldLeft2[A, B](l: List[A], z: B)(f: (B, A) => B): B = ??? // TODO: foldLeft via foldRight
 
   // Implement append in terms of either foldLeft or foldRight.
-  def appendLeft[A](a1: List[A], a2: List[A]): List[A] = //FIXME: test fails
-    foldLeft(a1, a2) {
+  def appendViaFoldLeft[A](a1: List[A], a2: List[A]): List[A] =
+    foldLeft(reverse(a1), a2) {
       case (acc: List[A], elem) => Cons(elem, acc)
     }
 
-  def map[A, B](l: List[A])(f: A => B): List[B] = ???
+  def appendViaFoldRight[A](a1: List[A], a2: List[A]): List[A] =
+    foldRight(a1, a2) {
+      case (elem, acc: List[A]) => Cons(elem, acc)
+    }
+
+  // Hard: Write a function that concatenates a list of lists into a single list. Its runtime
+  // should be linear in the total length of all lists. Try to use functions we have already
+  // defined.
+  def concatLists[A](xa: List[List[A]]): List[A] = // TODO: O(?)
+    foldLeft(xa, Nil: List[A]) {
+      case (acc, inner) =>
+        appendViaFoldRight(acc, inner)
+    }
+
+  // EXERCISE 3.16
+  // Write a function that transforms a list of integers by adding 1 to each element.
+  // (Reminder: this should be a pure function that returns a new List!)
+  def addOne(xa: List[Int]): List[Int] = map(xa)(_ + 1)
+
+  // EXERCISE 3.17
+  // Write a function that turns each value in a List[Double] into a String. You can use
+  // the expression d.toString to convert some d: Double to a String.
+  def doubleToString(xa: List[Double]): List[String] = map(xa)(_.toString())
+
+  // EXERCISE 3.18
+  // Write a function map that generalizes modifying each element in a list while maintaining the structure of the list
+  def map[A, B](l: List[A])(f: A => B): List[B] = { // TODO: check the best answer
+    @tailrec
+    def loop(xa: List[A], acc: List[B]): List[B] =
+      xa match {
+        case Nil => acc
+        case Cons(head, tail) =>
+          loop(tail, Cons(f(head), acc))
+      }
+    loop(reverse(l), Nil: List[B])
+  }
+
+  // EXERCISE 3.19
+  // Write a function filter that removes elements from a list unless they satisfy a given
+  // predicate. Use it to remove all odd numbers from a List[Int].
+  def filter[A](as: List[A])(f: A => Boolean): List[A] =
+    foldRight(as, Nil: List[A]) {
+      case (elem, acc) if f(elem) => Cons(elem, acc)
+      case (_, acc)               => acc
+    }
+
+  // EXERCISE 3.21
+  // Use flatMap to implement filter.
+  def filterViaFlatMap[A](as: List[A])(f: A => Boolean): List[A] =
+    flatMap(as) {
+      case elem if f(elem) => Cons(elem, Nil)
+      case _               => Nil
+    }
+
+// Write a function flatMap that works like map except that the function given will return
+// a list instead of a single result, and that list should be inserted into the final resulting
+// list. For instance, flatMap(List(1,2,3))(i => List(i,i)) should result in List(1,1,2,2,3,3).
+  def flatMap[A, B](as: List[A])(f: A => List[B]): List[B] =
+    foldRight(as, Nil: List[B]) {
+      case (elem, acc) =>
+        append(f(elem), acc)
+    }
+
+  // EXERCISE 3.22
+// Write a function that accepts two lists and constructs a new list by adding correspond-
+// ing elements. For example, List(1,2,3) and List(4,5,6) become List(5,7,9).
+  def addCorresponding(l: List[Int], r: List[Int]): List[Int] = { // TODO:check the best answer
+    def loop(left: List[Int], right: List[Int], acc: List[Int]): List[Int] =
+      left match {
+        case Nil => acc
+        case Cons(lh, lt) =>
+          right match {
+            case Nil => loop(lt, right, Cons(lh, acc))
+            case Cons(rh, rt) =>
+              loop(lt, rt, Cons(lh + rh, acc))
+          }
+      }
+    reverse(loop(l, r, Nil: List[Int]))
+  }
+
+  // EXERCISE 3.23
+  // Generalize the function you just wrote so that it’s not specific to integers or addition.
+  // Name your generalized function zipWith.
+  def zipWith[A](l: List[A], r: List[A])(f: (A, A) => A): List[A] = { // TODO:check the best answer
+    def loop(left: List[A], right: List[A], acc: List[A]): List[A] =
+      left match {
+        case Nil => acc
+        case Cons(lh, lt) =>
+          right match {
+            case Nil => loop(lt, right, Cons(lh, acc))
+            case Cons(rh, rt) =>
+              loop(lt, rt, Cons(f(lh, rh), acc))
+          }
+      }
+    reverse(loop(l, r, Nil: List[A]))
+  }
+
 }
