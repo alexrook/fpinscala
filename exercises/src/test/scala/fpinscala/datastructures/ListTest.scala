@@ -6,7 +6,7 @@ import org.scalatest.wordspec.AnyWordSpec
 class ListTest extends AnyWordSpec {
 
   import fpinscala.datastructures.List._
-  import fpinscala.datastructures.{List => CL}
+  import fpinscala.datastructures.{List => CL, Nil => CNil}
 
   "Custom List" when {
     "tail method called" should {
@@ -77,8 +77,8 @@ class ListTest extends AnyWordSpec {
     "run from right to left" in {
       assert(
         CL
-          .foldRight(CL(1, 2, 3), "") {
-            case (e, acc) => s"$acc $e"
+          .foldRight(CL(1, 2, 3), "") { case (e, acc) =>
+            s"$acc $e"
           }
           .trim == "3 2 1"
       )
@@ -89,8 +89,8 @@ class ListTest extends AnyWordSpec {
     "run from right to left" in {
       assert(
         CL
-          .foldRight2(CL(1, 2, 3), "") {
-            case (e, acc) => s"$acc $e"
+          .foldRight2(CL(1, 2, 3), "") { case (e, acc) =>
+            s"$acc $e"
           }
           .trim == "3 2 1"
       )
@@ -101,8 +101,8 @@ class ListTest extends AnyWordSpec {
     "run from left to right" in {
       assert(
         CL
-          .foldLeft(CL(1, 2, 3), "") {
-            case (acc, elem) => s"$acc $elem"
+          .foldLeft(CL(1, 2, 3), "") { case (acc, elem) =>
+            s"$acc $elem"
           }
           .trim == "1 2 3"
       )
@@ -130,13 +130,17 @@ class ListTest extends AnyWordSpec {
 
   "appendViaFoldLeft method" should {
     "return two list concatenation" in {
-      assert(appendViaFoldLeft(CL(1, 2, 3), CL(4, 5, 6)) == CL(1, 2, 3, 4, 5, 6))
+      assert(
+        appendViaFoldLeft(CL(1, 2, 3), CL(4, 5, 6)) == CL(1, 2, 3, 4, 5, 6)
+      )
     }
   }
 
   "appendViaFoldRight method" should {
     "return two list concatenation" in {
-      assert(appendViaFoldRight(CL(1, 2, 3), CL(4, 5, 6)) == CL(1, 2, 3, 4, 5, 6))
+      assert(
+        appendViaFoldRight(CL(1, 2, 3), CL(4, 5, 6)) == CL(1, 2, 3, 4, 5, 6)
+      )
     }
   }
 
@@ -199,6 +203,29 @@ class ListTest extends AnyWordSpec {
       assert(addCorresponding(CL(1, 2, 3, 5), CL(4, 5, 6)) == CL(5, 7, 9, 5))
       assert(addCorresponding(CL(1, 2, 3), CL(4, 5)) == CL(5, 7, 3))
     }
+  }
+
+  "the hasSubsequence method" should {
+    "return true for an empty List" in {
+      assert(hasSubsequenceV1(CNil, CNil))
+    }
+
+    "return true for the one size List" in {
+      assert(hasSubsequenceV1(sup = CL(1), sub = CL(1, 2)))
+      assert(hasSubsequenceV1(sup = CL(1), sub = CL(2, 1, 3)))
+      assert(hasSubsequenceV1(sup = CL(3), sub = CL(2, 1, 3)))
+    }
+
+    "return true for task description data" in {
+      val cl = CL(1, 2, 3, 4)
+      // List(1,2), List(2,3), and List(4) as subsequences, among others.
+      assert(hasSubsequenceV1(sup = CL(1, 2), sub = cl))
+      assert(hasSubsequenceV1(sup = CL(2, 3), sub = cl))
+      assert(hasSubsequenceV1(sup = CL(4), sub = cl))
+      assert(hasSubsequenceV1(sup = CNil, sub = cl))
+      assert(hasSubsequenceV1(sup = CL(3, 4), sub = cl))
+    }
+
   }
 
 }
