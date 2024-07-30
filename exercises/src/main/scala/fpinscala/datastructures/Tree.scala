@@ -81,10 +81,67 @@ object Tree {
       whenBranch = (left, right) => 1 + size2(left) + size2(right)
     )
 
-  def maximum2[T](tree: Tree[T])(implicit ev: Ordering[T]): T = ???
+  def maximum2[T](tree: Tree[T])(implicit ev: Ordering[T]): T = {
+    import Ordered._
+    fold(tree)(
+      whenLeaf = identity,
+      whenBranch = (left, right) => {
+        val l = maximum2(left)
+        val r = maximum2(right)
+        if (l >= r) {
+          l
+        } else {
+          r
+        }
+      }
+    )
+  }
 
-  def depth2(tree: Tree[_]): Int = ???
+  def depth2(tree: Tree[_]): Int =
+    fold(tree)(
+      whenLeaf = _ => 1,
+      whenBranch = (left, right) => {
+        val lD: Int = 1 + depth2(left)
+        val rD: Int = 1 + depth2(right)
+        math.max(lD, rD)
+      }
+    )
 
-  def map2[A, B](tree: Tree[A])(f: A => B): Tree[B] = ???
+  def map2[A, B](tree: Tree[A])(f: A => B): Tree[B] =
+    fold(tree)(
+      whenLeaf = a => Leaf(f(a)),
+      whenBranch = (left, right) => Branch(map2(left)(f), map2(right)(f))
+    )
+
+  def fold3[A, B](tree: Tree[A])(lF: A => B)(bF: (B, B) => B): B =
+    tree match {
+      case Leaf(value) => lF(value)
+      case Branch(left, right) =>
+        val lRet: B = fold3(left)(lF)(bF)
+        val rRet: B = fold3(right)(lF)(bF)
+        bF(lRet, rRet)
+    }
+
+  def size3(tree: Tree[_]): Int =
+    fold3(tree)(_ => 1)((a, b) => 1 + a + b)
+
+  def maximum3[T](tree: Tree[T])(implicit ev: Ordering[T]): T = {
+    import Ordered._
+    fold3(tree)(identity)((a, b) =>
+      if (a >= b) {
+        a
+      } else {
+        b
+      }
+    )
+  }
+
+  def depth3(tree: Tree[_]): Int =
+    fold3(tree)(_ => 1)((a, b) => math.max(1 + a, 1 + b))
+
+  def map3[A, B](tree: Tree[A])(f: A => B): Tree[B] =
+    fold3(tree)(l => Leaf(f(l)): Tree[B]) { case (a, b) =>
+      Branch(a, b): Tree[B]
+    }
 
 }
