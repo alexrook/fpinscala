@@ -123,7 +123,24 @@ object Option {
       }
     }
 
-  def sequence[A](a: List[Option[A]]): Option[List[A]] = ???
+  /** EXERCISE 4.4
+    *
+    * Write a function sequence that combines a list of Options into one Option
+    * containing a list of all the Some values in the original list. If the
+    * original list contains None even once, the result of the function should
+    * be None; otherwise the result should be Some with a list of all the
+    * values. Here is its signature:3
+    */
+  def sequence[A](xs: List[Option[A]]): Option[List[A]] =
+    if (xs.isEmpty) {
+      None
+    } else {
+      xs.foldLeft(Some(List.empty[A]): Option[List[A]]) {
+        case (Some(list), Some(a)) =>
+          Some(list :+ a)
+        case _ => None
+      }
+    }
 
   def traverse[A, B](a: List[A])(f: A => Option[B]): Option[List[B]] = ???
 }

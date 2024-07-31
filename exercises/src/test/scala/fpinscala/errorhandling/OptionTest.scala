@@ -18,6 +18,29 @@ class ListTest extends AnyWordSpec {
 
   "Custom Option" when {
 
+    "sequence method called" should {
+      "return correct results" in {
+        // copy from branch/second-edition/tests
+        def expected(xs: List[Option[Int]]): Option[List[Int]] =
+          if (xs.contains(None)) {
+            None
+          } else {
+            Some(xs.flatMap(_.map(List(_)).getOrElse(List.empty[Int])))
+          }
+
+        val xs1 = List(Some(1), Some(2), Some(2))
+        val expected1 = expected(xs1)
+        val actual1 = sequence(xs1)
+        assert(actual1 == expected1)
+
+        val xs2 = List(Some(1), None, Some(2))
+        val expected2 = expected(xs2)
+        val actual2 = sequence(xs2)
+        assert(actual2 == expected2)
+
+      }
+    }
+
     "map2 method called " should {
       "return correct results" in {
 
