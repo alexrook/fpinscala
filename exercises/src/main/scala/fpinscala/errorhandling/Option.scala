@@ -6,6 +6,7 @@ import scala.{
   Either => _,
   _
 } // hide std library `Option`, `Some` and `Either`, since we are writing our own in this chapter
+import fpinscala.streamingio.GeneralizedStreamTransducers.Process.id
 
 /** EXERCISE 4.1 Implement all of the functions on Option. As you implement each
   * function, try to think about what it means and in what situations you’d use
@@ -50,6 +51,9 @@ sealed trait Option[+A] { self =>
       case a if f(a) => Some(a)
       case _         => None
     }
+
+  final def foreach[U](f: A => U): Unit = map(f)
+
 }
 case class Some[+A](get: A) extends Option[A]
 case object None extends Option[Nothing]
@@ -80,7 +84,32 @@ object Option {
   def mean(xs: Seq[Double]): Option[Double] =
     if (xs.isEmpty) None
     else Some(xs.sum / xs.length)
-  def variance(xs: Seq[Double]): Option[Double] = ???
+
+//   EXERCISE 4.2
+// Implement the variance function in terms of flatMap. If the mean of a sequence is m,
+// the variance is the mean of math.pow(x - m, 2) for each element x in the sequence.
+// See the definition of variance on Wikipedia (http://mng.bz/0Qsr).
+// def variance(xs: Seq[Double]): Option[Double]
+  def variance(xs: Seq[Double]): Option[Double] = {
+
+    def mean(f: Double => Double): Option[Double] =
+      xs.foldLeft((0.0d, 0)) { case ((a, c), x) =>
+        (a + f(x)) -> (c + 1)
+      } match {
+        case (a, c) if c > 0 => Some(a / c)
+        case _               => None
+      }
+
+    for {
+      m <- mean(identity)
+      _ = println(s"Mean[$m]")
+      ret <- mean { x: Double =>
+        math.pow(x - m, 2)
+      }
+      _ = println(s"Variance[$ret]")
+    } yield ret
+
+  }
 
   def map2[A, B, C](a: Option[A], b: Option[B])(f: (A, B) => C): Option[C] = ???
 

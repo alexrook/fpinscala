@@ -17,6 +17,29 @@ class ListTest extends AnyWordSpec {
   import fpinscala.errorhandling.Option
 
   "Custom Option" when {
+    "variance method called " should {
+      "return correct results" in {
+
+        def expected( // just copy from second-edition branch /tests
+            xs: Seq[Double]
+        ): Option[Double] =
+          if (xs.nonEmpty) {
+            val m = xs.sum / xs.length
+            val newList = xs.map(x => math.pow(x - m, 2))
+            Some(newList.sum / newList.length)
+          } else {
+            None
+          }
+        val xs1 = Seq(1, 2, 3, 4, 56d)
+        val actual1 = variance(xs1)
+        assert(actual1 == expected(xs1))
+
+        val xs2 = Seq(0.01, -2.34, 3.5, 4, 56d)
+        val actual2 = variance(xs2)
+        assert(actual2 == expected(xs2))
+
+      }
+    }
     "flatten method called" should {
       "return None for an empty Option" in {
         assert(Some(None).flatten == None)
