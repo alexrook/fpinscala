@@ -102,16 +102,26 @@ object Option {
 
     for {
       m <- mean(identity)
-      _ = println(s"Mean[$m]")
+      // _ = println(s"Mean[$m]")
       ret <- mean { x: Double =>
         math.pow(x - m, 2)
       }
-      _ = println(s"Variance[$ret]")
+      // _ = println(s"Variance[$ret]")
     } yield ret
 
   }
 
-  def map2[A, B, C](a: Option[A], b: Option[B])(f: (A, B) => C): Option[C] = ???
+//   EXERCISE 4.3
+// Write a generic function map2 that combines two Option values using
+// a binary function.
+//If either Option value is None, then the return value is too.
+//Here is its signature:
+  def map2[A, B, C](a: Option[A], b: Option[B])(f: (A, B) => C): Option[C] =
+    a.flatMap { a =>
+      b.map { b =>
+        f(a, b)
+      }
+    }
 
   def sequence[A](a: List[Option[A]]): Option[List[A]] = ???
 

@@ -17,6 +17,29 @@ class ListTest extends AnyWordSpec {
   import fpinscala.errorhandling.Option
 
   "Custom Option" when {
+
+    "map2 method called " should {
+      "return correct results" in {
+
+        assert(
+          map2(Some(1), Some(2))(_ + _) == Some(3)
+        )
+
+        assert(
+          map2(None: Option[Int], Some(2))(_ + _) == None
+        )
+
+        assert(
+          map2(Some(2), None: Option[Int])(_ + _) == None
+        )
+
+        assert(
+          map2(None: Option[Int], None: Option[Int])(_ + _) == None
+        )
+
+      }
+    }
+
     "variance method called " should {
       "return correct results" in {
 
@@ -40,6 +63,7 @@ class ListTest extends AnyWordSpec {
 
       }
     }
+
     "flatten method called" should {
       "return None for an empty Option" in {
         assert(Some(None).flatten == None)
