@@ -7,6 +7,7 @@ import scala.{
   _
 } // hide std library `Option`, `Some` and `Either`, since we are writing our own in this chapter
 import fpinscala.streamingio.GeneralizedStreamTransducers.Process.id
+import scala.collection.mutable.ListBuffer
 
 /** EXERCISE 4.1 Implement all of the functions on Option. As you implement each
   * function, try to think about what it means and in what situations you’d use
@@ -59,6 +60,14 @@ case class Some[+A](get: A) extends Option[A]
 case object None extends Option[Nothing]
 
 object Option {
+
+  def apply[A](v: A): Option[A] =
+    if (v == null) {
+      None
+    } else {
+      Some(v)
+    }
+
   def failingFn(i: Int): Int = {
     val y: Int =
       throw new Exception(
@@ -142,5 +151,22 @@ object Option {
       }
     }
 
-  def traverse[A, B](a: List[A])(f: A => Option[B]): Option[List[B]] = ???
+  /** EXERCISE 4.5 Implement this function. It’s straightforward to do using map
+    * and sequence, but try for a more efficient implementation that only looks
+    * at the list once. In fact, implement sequence in terms of traverse.
+    */
+  def traverse[A, B](xs: List[A])(f: A => Option[B]): Option[List[B]] =
+    xs.foldLeft(Some(ListBuffer.empty[B]): Option[ListBuffer[B]]) {
+      case (accOpt, a) =>
+        for {
+          acc <- accOpt
+          r <- f(a)
+        } yield acc += r
+    }.filter(_.nonEmpty)
+      .map(_.toList)
+
+//In fact, implement sequence in terms of traverse.
+  def sequence2[A](xs: List[Option[A]]): Option[List[A]] =
+    traverse(xs)(identity)
+
 }

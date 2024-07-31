@@ -10,6 +10,7 @@ import scala.{
 
 import org.scalatest.wordspec.AnyWordSpec
 import scala.concurrent.Future.never
+import scala.util.Try
 
 class ListTest extends AnyWordSpec {
 
@@ -17,6 +18,75 @@ class ListTest extends AnyWordSpec {
   import fpinscala.errorhandling.Option
 
   "Custom Option" when {
+
+    "sequence2 method called" should {
+      "return correct results" in {
+        // copy from branch/second-edition/tests
+        def expected(xs: List[Option[Int]]): Option[List[Int]] =
+          if (xs.contains(None)) {
+            None
+          } else {
+            Some(xs.flatMap(_.map(List(_)).getOrElse(List.empty[Int])))
+          }
+
+        val xs1 = List(Some(1), Some(2), Some(2))
+        val expected1 = expected(xs1)
+        val actual1 = sequence2(xs1)
+        assert(actual1 == expected1)
+
+        val xs2 = List(Some(1), None, Some(2))
+        val expected2 = expected(xs2)
+        val actual2 = sequence2(xs2)
+        assert(actual2 == expected2)
+
+      }
+    }
+
+    "traverse method called" should {
+      "return correct results" in {
+        val TEST_MAX_VALUE = 100
+
+        val f: Int => Option[Int] = {
+          case x if x >= TEST_MAX_VALUE => Some(x)
+          case _                        => None
+        }
+
+        // option list generator
+        def expected(list: List[Int]): Option[List[Int]] = {
+          // здесь простой код для тестового генератора
+          val newList = list.map(f)
+          if (newList.isEmpty || newList.contains(None)) {
+            None
+          } else {
+            Some(newList.map(_.getOrElse(sys.error("never"))))
+          }
+        }
+
+        val list1: List[Int] =
+          List.fill(4)(scala.util.Random.between(TEST_MAX_VALUE + 1, 1000))
+        val expected1: Option[List[Int]] = expected(list1)
+        val actual1: Option[List[Int]] = traverse(list1)(Option.apply)
+
+        assert(actual1 == expected1)
+
+        val list2: List[Int] =
+          List.fill(4)(scala.util.Random.between(0, TEST_MAX_VALUE))
+        val expected2: Option[List[Int]] =
+          expected(list2)
+        assert(expected2 == None) // should be None bcs <TEST_MAX_VALUE
+
+        val actual2: Option[List[Int]] = traverse(list2)(f)
+        assert(actual2 == expected2)
+
+        val list3: List[Int] = List.empty[Int]
+        val expected3: Option[List[Int]] = expected(list3)
+        assert(expected3 == None) // should be None bcs of emptiness
+
+        val actual3: Option[List[Int]] = traverse(list3)(f)
+        assert(actual3 == expected3)
+
+      }
+    }
 
     "sequence method called" should {
       "return correct results" in {
