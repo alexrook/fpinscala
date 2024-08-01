@@ -7,6 +7,7 @@ import scala.{
   Right => _,
   _
 } // hide std library `Option` and `Either`, since we are writing our own in this chapter
+import scala.collection.mutable.ListBuffer
 
 sealed trait Either[+E, +A] {
 
@@ -58,10 +59,26 @@ case class Left[+E](get: E) extends Either[E, Nothing]
 case class Right[+A](get: A) extends Either[Nothing, A]
 
 object Either {
-  def traverse[E, A, B](es: List[A])(f: A => Either[E, B]): Either[E, List[B]] =
-    ???
 
-  def sequence[E, A](es: List[Either[E, A]]): Either[E, List[A]] = ???
+  def right[E, A](a: A): Either[E, A] = Right(a)
+
+  /** EXERCISE 4.7 Implement sequence and traverse for Either. These should
+    * return the first error that’s encountered, if there is one.
+    *
+    * TODO: there is no any cons[E], so traverse and sequence shouldn't fail for
+    * empty List's and return Right(List.empty[B])?
+    */
+  def traverse[E, A, B](es: List[A])(f: A => Either[E, B]): Either[E, List[B]] =
+    es.foldLeft(right[E, ListBuffer[B]](ListBuffer.empty[B])) {
+      case (accE, a) =>
+        for {
+          acc <- accE
+          r <- f(a)
+        } yield acc += r
+    }.map(_.toList)
+
+  def sequence[E, A](es: List[Either[E, A]]): Either[E, List[A]] =
+    traverse(es)(identity)
 
   def mean(xs: IndexedSeq[Double]): Either[String, Double] =
     if (xs.isEmpty)

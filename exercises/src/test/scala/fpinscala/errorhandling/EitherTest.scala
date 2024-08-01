@@ -12,6 +12,8 @@ import scala.{
 
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.Assertions._
+import org.scalatest.matchers.should.Matchers._
+import fpinscala.parallelism.Par
 
 class EitherTest extends AnyWordSpec {
 
@@ -19,6 +21,80 @@ class EitherTest extends AnyWordSpec {
   import fpinscala.errorhandling.Either
 
   "Custom Either" when {
+
+    "sequence method called " should {
+      "return results for Right list" in {
+
+        sequence(
+          List(Right(1), Right(2), Right(3))
+        ) shouldBe Right(List(1, 2, 3))
+
+      }
+
+      "return results for empty list" in {
+        sequence(
+          List.empty[Right[Int]]
+        ) shouldBe Right(List.empty[Int])
+      }
+
+      "return results for Left list" in {
+
+        sequence(
+          List(Left("A"), Right(2), Right(3))
+        ) shouldBe Left("A")
+
+        sequence(
+          List(Left("A"), Right(2), Left("B"))
+        ) shouldBe Left("A")
+      }
+    }
+
+    "traverse method called " should {
+      "return results for Right list" in {
+        assert(
+          traverse(
+            List(1, 2, 3)
+          )(x => Right(x.toString())) ==
+            Right(List("1", "2", "3"))
+        )
+
+      }
+
+      "return results for empty list" in {
+        assert(
+          traverse(
+            List.empty[Int]
+          )(x => Right(x.toString())) ==
+            Right(List.empty[Int])
+        )
+
+      }
+
+      "return results for Left list" in {
+        assert(
+          traverse(
+            List(1, 2, 3)
+          )(x =>
+            if (x == 1) {
+              Left("A")
+            } else {
+              Right(x.toString())
+            }
+          ) ==
+            Left("A")
+        )
+        // should return first error
+        traverse(
+          List(1, 2, 3)
+        ) {
+          case 1 => Left("A")
+          case 2 => Left("B")
+          case x => Right(x.toString())
+        } shouldBe Left("A")
+
+      }
+
+    }
 
     "fold method called " should {
       "return correct results" in {
