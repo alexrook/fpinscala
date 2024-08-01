@@ -35,6 +35,14 @@ sealed trait Either[+E, +A] {
       case Left(a)  => fL(a)
     }
 
+  def mapLeft[E1](fL: E => E1): Either[E1, A] =
+    fold[Either[E1, A]](Right.apply)(fL.andThen(Left.apply))
+
+  def isLeft: Boolean =
+    fold(_ => false)(_ => true)
+
+  def isRight: Boolean = !isLeft
+
   /** EXERCISE 4.6 Implement versions of map, flatMap, orElse, and map2 on
     * Either that operate on the Right value.
     */
@@ -93,5 +101,57 @@ object Either {
   def Try[A](a: => A): Either[Exception, A] =
     try Right(a)
     catch { case e: Exception => Left(e) }
+
+// EXERCISE 4.8 TODO
+// In this implementation, map2 is only able to report one error, even if both the name
+// and the age are invalid. What would you need to change in order to report both errors?
+// Would you change map2 or the signature of mkPerson? Or could you create a new data
+// type that captures this requirement better than Either does, with some additional
+// structure? How would orElse, traverse, and sequence behave differently for that
+// data type?
+
+  case class Person(name: Name, age: Age)
+  sealed class Name(val value: String)
+  sealed class Age(val value: Int)
+
+  def mkName(name: String): Either[String, Name] =
+    if (name == "" || name == null) Left("Name is empty.")
+    else Right(new Name(name))
+
+  def mkAge(age: Int): Either[String, Age] =
+    if (age < 0) Left("Age is out of range.")
+    else Right(new Age(age))
+
+  def mkPerson1(name: String, age: Int): Either[String, Person] =
+    for {
+      n <- mkName(name)
+      a <- mkAge(age)
+    } yield Person(n, a)
+
+  object Validator {
+
+    def sum[E, A](acc: Either[List[E], List[A]], next: Either[E, A]) =
+      next match {
+        case Left(e) if acc.isLeft =>
+          acc.mapLeft(_ :+ e)
+
+        case Left(e) =>
+          Left(List.empty[E]).mapLeft(_ :+ e)
+
+        case Right(a) =>
+          acc.map(_ :+ a)
+      }
+
+    def traverse[E, A, B](es: List[A])(
+        f: A => Either[E, B]
+    ): Either[List[E], List[B]] =
+      es.foldLeft(right[List[E], List[B]](List.empty[B])) { (acc, a) =>
+        sum(acc, f(a))
+      }
+
+    def sequence[E, A](es: List[Either[E, A]]): Either[List[E], List[A]] =
+      traverse(es)(identity)
+
+  }
 
 }
