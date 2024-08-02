@@ -105,7 +105,21 @@ trait Stream[+A] {
     loop(this)
   }
 
-  def forAll(p: A => Boolean): Boolean = ???
+  /** EXERCISE 5.4
+    *
+    * Implement forAll, which checks that all elements in the Stream match a
+    * given predi- cate. Your implementation should terminate the traversal as
+    * soon as it encounters a nonmatching value.
+    */
+  def forAll(p: A => Boolean): Boolean = // TODO:replace with stack trace
+    foldRight(false) { case (a, rest) =>
+      p(a) || rest
+    }
+
+  /** EXERCISE 5.5 
+   * 
+   * Use foldRight to implement takeWhile.
+    */
 
   def headOption: Option[A] = ???
 
