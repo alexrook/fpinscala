@@ -132,7 +132,10 @@ trait Stream[+A] {
     *
     * Hard: Implement headOption using foldRight.
     */
-  def headOption: Option[A] = ???
+  def headOption: Option[A] =
+    foldRight(Option.empty[A]) { case (a, _) =>
+      Some(a)
+    }
 
   /** EXERCISE 5.7 Implement map, filter, append, and flatMap using foldRight.
     * The append method should be non-strict in its argument.

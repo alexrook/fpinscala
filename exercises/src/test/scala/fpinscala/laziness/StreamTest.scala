@@ -12,6 +12,18 @@ class StreamTest extends AnyWordSpec {
 
   "Custom Stream" when {
 
+    "headOption method called " should {
+      "return correct results for non empty list" in {
+        Stream(1, 2, 3, 4, 5).headOption shouldBe Some(1)
+        Stream("A").headOption shouldBe Some("A")
+        Stream(5, 4, 3, 2, 1).headOption shouldBe Some(5)
+      }
+
+      "return correct results for empty list" in {
+        Stream.empty[Int].headOption shouldBe None
+      }
+    }
+
     "takeWhile2 method called " should {
       "return correct results for non empty list" in {
         Stream(1, 2, 3, 4, 5).takeWhile2(_ > 0).toList shouldBe List(1, 2, 3, 4,
