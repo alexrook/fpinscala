@@ -12,6 +12,26 @@ class StreamTest extends AnyWordSpec {
 
   "Custom Stream" when {
 
+    "takeWhile2 method called " should {
+      "return correct results for non empty list" in {
+        Stream(1, 2, 3, 4, 5).takeWhile2(_ > 0).toList shouldBe List(1, 2, 3, 4,
+          5)
+        Stream("A").takeWhile2(_.length() > 2) shouldBe Stream.empty[String]
+        Stream(1, 2, 3, 4, 5).takeWhile2(_ == Int.MaxValue) shouldBe Stream
+          .empty[Int]
+        Stream(5, 4, 3, 2, 1).takeWhile2(_ > 2).toList shouldBe List(5, 4, 3)
+      }
+
+      "return correct results for empty list" in {
+        Stream.empty[Int].takeWhile2(_ < 0) shouldBe Stream.empty[Int]
+        Stream.empty[Int].takeWhile2(_ > Int.MaxValue) shouldBe Stream
+          .empty[Int]
+        Stream.empty[Int].takeWhile2(_ < Int.MinValue) shouldBe Stream
+          .empty[Int]
+      }
+
+    }
+
     "forAll method called " should {
       "return correct results for non empty list" in {
         Stream(1, 2, 3, 4, 5).forAll(_ > 0) shouldBe true

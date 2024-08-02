@@ -116,17 +116,29 @@ trait Stream[+A] {
       p(a) || rest
     }
 
-  /** EXERCISE 5.5 
-   * 
-   * Use foldRight to implement takeWhile.
+  /** EXERCISE 5.5
+    *
+    * Use foldRight to implement takeWhile.
     */
+  def takeWhile2(p: A => Boolean): Stream[A] = // TODO:replace with stack trace
+    foldRight(Stream.empty[A]) {
+      case (el: A, b: Stream[A]) if p(el) =>
+        Stream.cons(el, b takeWhile (p))
 
+      case _ => Stream.empty[A]
+    }
+
+  /** EXERCISE 5.6
+    *
+    * Hard: Implement headOption using foldRight.
+    */
   def headOption: Option[A] = ???
 
-  // 5.7 map, filter, append, flatmap using foldRight. Part of the exercise is
-  // writing your own function signatures.
+  /** EXERCISE 5.7 Implement map, filter, append, and flatMap using foldRight.
+    * The append method should be non-strict in its argument.
+    */
 
-  def startsWith[B](s: Stream[B]): Boolean = ???
+  // def startsWith[B](s: Stream[B]): Boolean = ???
 }
 case object Empty extends Stream[Nothing]
 case class Cons[+A](h: () => A, t: () => Stream[A]) extends Stream[A]
