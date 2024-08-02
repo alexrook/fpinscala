@@ -82,7 +82,28 @@ trait Stream[+A] {
     loop(this, n)
   }
 
-  def takeWhile(p: A => Boolean): Stream[A] = ???
+  /** EXERCISE 5.3
+    *
+    * Write the function takeWhile for returning all starting elements of a
+    * Stream that match the given predicate. def takeWhile(p: A => Boolean):
+    * Stream[A]
+    */
+  def takeWhile(p: A => Boolean): Stream[A] = {
+    def loop(stream: Stream[A]): Stream[A] =
+      stream match {
+        case Cons(h, t) =>
+          val v = h() // one time execution
+          if (p(v)) {
+            Stream.cons(v, loop(t()))
+          } else {
+            Stream.empty[A]
+          }
+
+        case _ => Stream.empty[A]
+      }
+
+    loop(this)
+  }
 
   def forAll(p: A => Boolean): Boolean = ???
 
