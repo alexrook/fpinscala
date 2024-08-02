@@ -51,9 +51,36 @@ trait Stream[+A] {
     case Empty      => None
     case Cons(h, t) => if (f(h())) Some(h()) else t().find(f)
   }
-  def take(n: Int): Stream[A] = ???
 
-  def drop(n: Int): Stream[A] = ???
+  /** EXERCISE 5.2
+    *
+    * Write the function take(n) for returning the first n elements of a Stream,
+    * and drop(n) for skipping the first n elements of a Stream.
+    */
+  def take(n: Int): Stream[A] = {
+
+    def loop(stream: Stream[A], a: Int): Stream[A] =
+      stream match {
+        case Cons(h, t) if a > 0 =>
+          Stream.cons(h(), loop(t(), a = a - 1))
+        case _ => Stream.empty[A]
+      }
+
+    loop(this, n)
+
+  }
+
+  def drop(n: Int): Stream[A] = {
+    @tailrec
+    def loop(stream: Stream[A], a: Int): Stream[A] =
+      stream match {
+        case Cons(_, _) if a <= 0 => stream
+        case Cons(_, t)           => loop(t(), a - 1)
+        case _                    => Stream.empty[A]
+      }
+
+    loop(this, n)
+  }
 
   def takeWhile(p: A => Boolean): Stream[A] = ???
 
