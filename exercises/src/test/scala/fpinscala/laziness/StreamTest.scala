@@ -12,6 +12,16 @@ class StreamTest extends AnyWordSpec {
 
   "Custom Stream" when {
 
+    "constant method called" should {
+      "return correct values" in {
+        constant("A").take(3).toList shouldBe List.fill(3)("A")
+        constant(1).take(10).toList shouldBe List.fill(10)(1)
+
+        ones.take(0) shouldBe Stream.empty[Int]
+        ones.take(42).toList shouldBe List.fill(42)(1)
+      }
+    }
+
     "flatMap method called " should {
       "return correct results for non empty list" in {
         Stream(
@@ -60,7 +70,7 @@ class StreamTest extends AnyWordSpec {
         Stream.empty[Int].appendOne(42).toList shouldBe List(42)
       }
     }
-    
+
     "append method called " should {
       "return correct results for non empty list" in {
         Stream(

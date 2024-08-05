@@ -190,6 +190,16 @@ object Stream {
     else cons(as.head, apply(as.tail: _*))
 
   val ones: Stream[Int] = Stream.cons(1, ones)
+
+  /** EXERCISE 5.8
+    *
+    * Generalize ones slightly to the function constant, which returns an
+    * infinite Stream of a given value.
+    */
+  def constant[A](a: A): Stream[A] = Stream.cons(a, constant(a))
+
+  val ones2: Stream[Int] = constant(1)
+
   def from(n: Int): Stream[Int] = ???
 
   def unfold[A, S](z: S)(f: S => Option[(A, S)]): Stream[A] = ???
