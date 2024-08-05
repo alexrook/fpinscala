@@ -200,7 +200,12 @@ object Stream {
 
   val ones2: Stream[Int] = constant(1)
 
-  def from(n: Int): Stream[Int] = ???
+  /** EXERCISE 5.9
+    *
+    * Write a function that generates an infinite stream of integers, starting
+    * from n, then n + 1, n + 2, and so on.7
+    */
+  def from(n: Int): Stream[Int] = Stream.cons(n, from(n + 1))
 
   def unfold[A, S](z: S)(f: S => Option[(A, S)]): Stream[A] = ???
 }

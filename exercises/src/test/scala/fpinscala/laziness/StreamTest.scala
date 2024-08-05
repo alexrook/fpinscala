@@ -12,6 +12,14 @@ class StreamTest extends AnyWordSpec {
 
   "Custom Stream" when {
 
+    "from method called" should {
+      "return correct values" in {
+        from(1).take(3).toList shouldBe List(1, 2, 3)
+
+        from(1).take(42).toList.contains(42) shouldBe true
+      }
+    }
+
     "constant method called" should {
       "return correct values" in {
         constant("A").take(3).toList shouldBe List.fill(3)("A")
