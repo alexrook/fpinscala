@@ -146,6 +146,16 @@ trait Stream[+A] {
       Stream.cons[B](f(a), b)
     }
 
+  def filter(p: A => Boolean): Stream[A] =
+    foldRight(Stream.empty[A]) {
+
+      case (a, b) if p(a) =>
+        Stream.cons(a, b)
+
+      case (_, b) => b
+
+    }
+
   // def startsWith[B](s: Stream[B]): Boolean = ???
 }
 case object Empty extends Stream[Nothing]

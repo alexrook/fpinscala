@@ -12,6 +12,32 @@ class StreamTest extends AnyWordSpec {
 
   "Custom Stream" when {
 
+    "filter method called " should {
+      "return correct results for non empty list" in {
+        Stream(
+          1, 2, 3, 4, 5
+        ).filter(_ > 1).toList shouldBe List(2, 3, 4, 5)
+
+        Stream("A").filter(_.nonEmpty).toList shouldBe List("A")
+
+        Stream(5, 4, 3, 2, 1).filter(_ < 6).toList shouldBe List(5, 4, 3, 2, 1)
+
+        Stream(5, 4, 3, 2, 1)
+          .filter(x => x == 3 || x == 5)
+          .toList shouldBe List(5, 3)
+
+        Stream(5, 4, 3, 2, 1)
+          .filter(x => x == 4 || x == 2)
+          .toList shouldBe List(4, 2)
+
+        Stream("A", "B", "C").filter(_ => false) shouldBe Stream.empty
+      }
+
+      "return correct results for empty list" in {
+        Stream.empty[Int].filter(_ == 1) shouldBe Stream.empty[Int]
+      }
+    }
+
     "map method called " should {
       "return correct results for non empty list" in {
         Stream(
