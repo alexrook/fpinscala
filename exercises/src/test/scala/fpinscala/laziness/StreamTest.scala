@@ -12,11 +12,32 @@ class StreamTest extends AnyWordSpec {
 
   "Custom Stream" when {
 
+    "unfold method called" should {
+      "return correct values" in {
+
+        unfold(1) { x =>
+          Some(x -> (x + 1))
+        }.take(3).toList shouldBe List(1, 2, 3)
+
+        unfold(1)(_ => None) shouldBe Stream.empty[Int]
+
+        unfold(1) {
+
+          case x if x < 5 =>
+            Some(x -> (x + 1))
+
+          case _ => None
+
+        }.take(Int.MaxValue).toList shouldBe List(1, 2, 3, 4)
+      }
+    }
+
     "fibs method called" should {
       "return correct values" in {
         fibs.take(7).toList shouldBe List(0, 1, 1, 2, 3, 5, 8)
       }
     }
+
     "from method called" should {
       "return correct values" in {
         from(1).take(3).toList shouldBe List(1, 2, 3)

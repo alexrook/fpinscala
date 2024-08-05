@@ -4,6 +4,7 @@ import Stream._
 import scala.collection.mutable.ListBuffer
 import fpinscala.datastructures.List.tail
 import scala.annotation.tailrec
+import fpinscala.datastructures.List.foldRight
 trait Stream[+A] {
 
   /** EXERCISE 5.1
@@ -177,6 +178,7 @@ case object Empty extends Stream[Nothing]
 case class Cons[+A](h: () => A, t: () => Stream[A]) extends Stream[A]
 
 object Stream {
+
   def cons[A](hd: => A, tl: => Stream[A]): Stream[A] = {
     lazy val head = hd
     lazy val tail = tl
@@ -222,5 +224,17 @@ object Stream {
     Stream(0, 1) append loop(0, 1)
   }
 
-  def unfold[A, S](z: S)(f: S => Option[(A, S)]): Stream[A] = ???
+  /** EXERCISE 5.11
+    *
+    * Write a more general stream-building function called unfold. It takes an
+    * initial state, and a function for producing both the next state and the
+    * next value in the generated stream.
+    */
+
+  def unfold[A, S](z: S)(f: S => Option[(A, S)]): Stream[A] =
+    f(z)
+      .map { case (a, s) =>
+        Stream.cons(a, unfold(s)(f))
+      }
+      .getOrElse(Stream.empty[A])
 }
