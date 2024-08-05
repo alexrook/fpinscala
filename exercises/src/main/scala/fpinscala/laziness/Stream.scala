@@ -207,5 +207,20 @@ object Stream {
     */
   def from(n: Int): Stream[Int] = Stream.cons(n, from(n + 1))
 
+  /** EXERCISE 5.10
+    *
+    * Write a function fibs that generates the infinite stream of Fibonacci
+    * numbers: 0, 1, 1, 2, 3, 5, 8, and so on.
+    */
+
+  def fibs: Stream[Int] = {
+    def loop(p1: Int, p2: Int): Stream[Int] = {
+      val next = p1 + p2
+      Stream.cons(next, loop(p2, next))
+    }
+
+    Stream(0, 1) append loop(0, 1)
+  }
+
   def unfold[A, S](z: S)(f: S => Option[(A, S)]): Stream[A] = ???
 }
