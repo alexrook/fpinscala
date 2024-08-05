@@ -146,6 +146,21 @@ trait Stream[+A] {
       Stream.cons[B](f(a), b)
     }
 
+  def append[A1 >: A](s: => Stream[A1]): Stream[A1] =
+    foldRight(s) { case (a, b) =>
+      Stream.cons(a, b)
+    }
+
+  def appendOne[A1 >: A](s: => A1): Stream[A1] =
+    foldRight(Stream(s)) { case (a, b) =>
+      Stream.cons(a, b)
+    }
+
+  def flatMap[B](f: A => Stream[B]) =
+    foldRight(Stream.empty[B]) { case (a, b) =>
+      f(a) append b
+    }
+
   def filter(p: A => Boolean): Stream[A] =
     foldRight(Stream.empty[A]) {
 

@@ -12,6 +12,82 @@ class StreamTest extends AnyWordSpec {
 
   "Custom Stream" when {
 
+    "flatMap method called " should {
+      "return correct results for non empty list" in {
+        Stream(
+          1, 2, 3, 4, 5
+        ).flatMap(x => Stream(x)).toList shouldBe List(1, 2, 3, 4, 5)
+
+        Stream("A").flatMap(s => Stream(s, s)).toList shouldBe List("A", "A")
+
+        Stream(5, 4, 3, 2, 1).flatMap(x => Stream(x + 1)).toList shouldBe List(
+          6, 5, 4, 3, 2)
+
+        Stream("A", "B", "C")
+          .flatMap(_ => Stream(1, 2, 3))
+          .toList shouldBe List(1, 2, 3, 1, 2, 3, 1, 2, 3)
+      }
+
+      "return correct results for empty list" in {
+        Stream.empty[Int].flatMap(_ => Stream(1, 2, 3)) shouldBe Stream
+          .empty[Int]
+
+        Stream.empty[Int].flatMap(_ => Stream.empty[Int]) shouldBe Stream
+          .empty[Int]
+      }
+    }
+
+    "appendOne method called " should {
+      "return correct results for non empty list" in {
+        Stream(
+          1, 2, 3, 4, 5
+        ).appendOne(6).toList shouldBe List(1, 2, 3, 4, 5, 6)
+
+        Stream("A").appendOne(1).toList shouldBe List("A", 1)
+
+        Stream(5, 4, 3, 2, 1).appendOne(1).toList shouldBe List(5, 4, 3, 2, 1,
+          1)
+
+        Stream("A", "B", "C").appendOne("D").toList shouldBe List(
+          "A",
+          "B",
+          "C",
+          "D"
+        )
+      }
+
+      "return correct results for empty list" in {
+        Stream.empty[Int].appendOne(42).toList shouldBe List(42)
+      }
+    }
+    
+    "append method called " should {
+      "return correct results for non empty list" in {
+        Stream(
+          1, 2, 3, 4, 5
+        ).append(Stream(6)).toList shouldBe List(1, 2, 3, 4, 5, 6)
+
+        Stream("A").append(Stream(1, 3, 4)).toList shouldBe List("A", 1, 3, 4)
+
+        Stream(5, 4, 3, 2, 1).append(Stream(1, 2, 3)).toList shouldBe List(5, 4,
+          3, 2, 1, 1, 2, 3)
+
+        Stream(5, 4, 3, 2, 1)
+          .append(Stream.empty[Int])
+          .toList shouldBe List(5, 4, 3, 2, 1)
+
+        Stream("A", "B", "C").append(Stream.empty).toList shouldBe List(
+          "A",
+          "B",
+          "C"
+        )
+      }
+
+      "return correct results for empty list" in {
+        Stream.empty[Int].filter(_ == 1) shouldBe Stream.empty[Int]
+      }
+    }
+
     "filter method called " should {
       "return correct results for non empty list" in {
         Stream(
