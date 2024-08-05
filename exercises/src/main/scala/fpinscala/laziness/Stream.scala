@@ -123,7 +123,7 @@ trait Stream[+A] {
   def takeWhile2(p: A => Boolean): Stream[A] = // TODO:replace with stack trace
     foldRight(Stream.empty[A]) {
       case (el: A, b: Stream[A]) if p(el) =>
-        Stream.cons(el, b takeWhile (p))
+        Stream.cons(el, b)
 
       case _ => Stream.empty[A]
     }
@@ -140,6 +140,11 @@ trait Stream[+A] {
   /** EXERCISE 5.7 Implement map, filter, append, and flatMap using foldRight.
     * The append method should be non-strict in its argument.
     */
+
+  def map[B](f: A => B): Stream[B] =
+    foldRight(Stream.empty[B]) { case (a, b) =>
+      Stream.cons[B](f(a), b)
+    }
 
   // def startsWith[B](s: Stream[B]): Boolean = ???
 }
