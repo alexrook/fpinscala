@@ -113,8 +113,12 @@ trait Stream[+A] {
     * soon as it encounters a nonmatching value.
     */
   def forAll(p: A => Boolean): Boolean = // TODO:replace with stack trace
-    foldRight(false) { case (a, rest) =>
-      p(a) || rest
+    this match {
+      case Cons(h, t) =>
+        foldRight(true) { case (a, rest) =>
+          p(a) && rest
+        }
+      case Empty => false
     }
 
   /** EXERCISE 5.5
@@ -229,7 +233,24 @@ trait Stream[+A] {
       case _ => None
     }
 
-  // def startsWith[B](s: Stream[B]): Boolean = ???
+  /** EXERCISE 5.14
+    *
+    * Hard: Implement startsWith using functions you’ve written. It should check
+    * if one Stream is a prefix of another. For instance, Stream(1,2,3)
+    * startsWith Stream(1,2) would be true.
+    */
+  def startsWith[B](that: Stream[B]): Boolean =
+    this.zipAll(that).foldRight(true) {
+      case ((Some(a), Some(b)), rest) if a == b => true && rest
+      case ((Some(a), None), rest)              => true && rest
+      case _                                    => false
+    }
+
+  def startsWith2[A](s: Stream[A]): Boolean =
+    zipAll(s).takeWhile(!_._2.isEmpty) forAll { case (h, h2) =>
+      h == h2
+    }
+
 }
 case object Empty extends Stream[Nothing]
 case class Cons[+A](h: () => A, t: () => Stream[A]) extends Stream[A]

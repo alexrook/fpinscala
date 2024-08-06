@@ -12,6 +12,68 @@ class StreamTest extends AnyWordSpec {
 
   "Custom Stream" when {
 
+    "startsWith2 method called " should {
+      "return correct results for non empty streams" in {
+
+        Stream(1, 2, 3, 4, 5)
+          .startsWith2(Stream(1, 2, 3, 4, 5)) shouldBe true
+
+        Stream(1, 2, 3, 4, 5)
+          .startsWith2(Stream(1, 2, 3)) shouldBe true
+
+        Stream(1, 2, 3)
+          .startsWith2(Stream(1, 2, 3, 4, 5)) shouldBe false
+
+      }
+
+      "return correct results for empty streams" in {
+        // TODO: see https://github.com/fpinscala/fpinscala/discussions/696
+
+        // Stream(1, 2, 3)
+        //   .startsWith2(Stream.empty[Int]) shouldBe true
+
+        // Stream
+        //   .empty[Int]
+        //   .startsWith2(Stream.empty[Int]) shouldBe true
+
+        Stream
+          .empty[Int]
+          .startsWith2(Stream(1, 2, 3)) shouldBe false
+
+      }
+
+    }
+
+    "startsWith method called " should {
+      "return correct results for non empty streams" in {
+
+        Stream(1, 2, 3, 4, 5)
+          .startsWith(Stream(1, 2, 3, 4, 5)) shouldBe true
+
+        Stream(1, 2, 3, 4, 5)
+          .startsWith(Stream(1, 2, 3)) shouldBe true
+
+        Stream(1, 2, 3)
+          .startsWith(Stream(1, 2, 3, 4, 5)) shouldBe false
+
+      }
+
+      "return correct results for empty streams" in {
+        Stream(1, 2, 3)
+          .startsWith(Stream.empty[Int]) shouldBe true
+
+        Stream
+          .empty[Int]
+          .startsWith(Stream.empty[Int]) shouldBe true
+
+        Stream
+          .empty[Int]
+          .startsWith(Stream(1, 2, 3)) shouldBe false
+
+      }
+
+    }
+
     "zipAll method called " should {
 
       def excepted[A, B](
@@ -362,6 +424,10 @@ class StreamTest extends AnyWordSpec {
         Stream("A").forAll(_.length() > 2) shouldBe false
         Stream(1, 2, 3, 4, 5).forAll(_ == Int.MaxValue) shouldBe false
         Stream(5, 4, 3, 2, 1).forAll(_ > 0) shouldBe true
+
+        Stream((5, 4), (4, 4), (3, 3), (2, 2), (1, 1)).forAll { case ((a, b)) =>
+          a == b
+        } shouldBe false
       }
 
       "return correct results for empty list" in {
