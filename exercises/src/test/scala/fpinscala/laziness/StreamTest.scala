@@ -12,6 +12,24 @@ class StreamTest extends AnyWordSpec {
 
   "Custom Stream" when {
 
+    "tails method called " should {
+
+      "return correct results for non empty streams" in {
+        Stream(1, 2, 3).tails.toList.foreach { stream =>
+          println(stream.toList.mkString(","))
+        }
+
+        Stream(1, 2, 3, 4, 5).tails.toList.foreach { stream =>
+          println(stream.toList.mkString(start = "[", sep = "", end = "]"))
+        }
+      }
+
+      "return correct results for empty streams" in {
+        Stream.empty[Int].tails.toList.map(_.toList) shouldBe List(List.empty[Int])
+      }
+
+    }
+
     "startsWith2 method called " should {
       "return correct results for non empty streams" in {
 
