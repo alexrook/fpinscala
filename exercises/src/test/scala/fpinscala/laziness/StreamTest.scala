@@ -12,6 +12,133 @@ class StreamTest extends AnyWordSpec {
 
   "Custom Stream" when {
 
+    "zipAll method called " should {
+
+      def excepted[A, B](
+          left: List[A],
+          right: List[B]
+      ): List[(Option[A], Option[B])] =
+        left.map(Some.apply).zipAll(right.map(Some.apply), None, None)
+      "return correct results for non empty streams" in {
+        Stream(1, 2, 3, 4, 5)
+          .zipAll(Stream(1, 2, 3, 4, 5))
+          .toList shouldBe
+          excepted(List(1, 2, 3, 4, 5), List(1, 2, 3, 4, 5))
+
+        Stream(1, 2, 3, 4, 5)
+          .zipAll(Stream(1, 2, 3))
+          .toList shouldBe
+          excepted(List(1, 2, 3, 4, 5), List(1, 2, 3))
+
+        Stream(1, 2, 3)
+          .zipAll(Stream(1, 2, 3, 4, 5))
+          .toList shouldBe
+          excepted(List(1, 2, 3), List(1, 2, 3, 4, 5))
+      }
+
+      "return correct results for empty streams" in {
+        Stream
+          .empty[Int]
+          .zipAll(Stream(1, 2, 3, 4, 5))
+          .toList shouldBe excepted(
+          List.empty[Int],
+          List(1, 2, 3, 4, 5)
+        )
+
+        Stream(1, 2, 3)
+          .zipAll(Stream.empty[Int])
+          .toList shouldBe excepted(
+          List(1, 2, 3),
+          List.empty[Int]
+        )
+
+      }
+
+    }
+
+    "zipWith method called " should {
+      "return correct results for non empty stream" in {
+        Stream(1, 2, 3, 4, 5)
+          .zipWith(Stream(1, 2, 3, 4, 5))(_ + _)
+          .toList shouldBe
+          List(2, 4, 6, 8, 10)
+
+        Stream(1, 2, 3, 4, 5)
+          .zipWith(Stream(1, 2, 3))(_ + _)
+          .toList shouldBe
+          List(2, 4, 6)
+
+        Stream(1, 2, 3)
+          .zipWith(Stream(1, 2, 3, 4, 5))(_ + _)
+          .toList shouldBe
+          List(2, 4, 6)
+      }
+
+      "return correct results for empty stream" in {
+        Stream
+          .empty[Int]
+          .zipWith(Stream(1, 2, 3, 4, 5))(_ + _) shouldBe Stream.empty[Int]
+
+        Stream(1, 2, 3)
+          .zipWith(Stream.empty[Int])(_ + _) shouldBe Stream.empty[Int]
+
+      }
+
+    }
+
+    "takeWhile3 method called " should {
+      "return correct results for non empty list" in {
+        Stream(1, 2, 3, 4, 5).takeWhile3(_ > 0).toList shouldBe List(1, 2, 3, 4,
+          5)
+        Stream("A").takeWhile3(_.length() > 2) shouldBe Stream.empty[String]
+        Stream(1, 2, 3, 4, 5).takeWhile3(_ == Int.MaxValue) shouldBe Stream
+          .empty[Int]
+        Stream(5, 4, 3, 2, 1).takeWhile3(_ > 2).toList shouldBe List(5, 4, 3)
+      }
+
+      "return correct results for empty list" in {
+        Stream.empty[Int].takeWhile3(_ < 0) shouldBe Stream.empty[Int]
+        Stream.empty[Int].takeWhile3(_ > Int.MaxValue) shouldBe Stream
+          .empty[Int]
+        Stream.empty[Int].takeWhile3(_ < Int.MinValue) shouldBe Stream
+          .empty[Int]
+      }
+
+    }
+
+    "take2 method called " should {
+      "return correct results for non empty list" in {
+        Stream(1, 2, 3, 4, 5).take2(2).toList shouldBe List(1, 2)
+        Stream(1).take2(1).toList shouldBe Stream(1).toList
+        Stream(1, 2, 3, 4, 5)
+          .take2(Int.MaxValue)
+          .toList shouldBe List(1, 2, 3, 4, 5)
+        Stream(1, 3, 4).take2(-1) shouldBe Stream.empty[Int]
+      }
+
+      "return correct results for empty list" in {
+        Stream.empty[Int].take2(10) shouldBe Stream.empty[Int]
+        Stream.empty[Int].take2(Int.MaxValue) shouldBe Stream.empty[Int]
+        Stream.empty[Int].take2(Int.MinValue) shouldBe Stream.empty[Int]
+      }
+
+    }
+
+    "map2 method called " should {
+      "return correct results for non empty list" in {
+        Stream(
+          1, 2, 3, 4, 5
+        ).map2(_ + 1).toList shouldBe List(2, 3, 4, 5, 6)
+
+        Stream("A").map2(_ => "B").toList shouldBe List("B")
+        Stream(5, 4, 3, 2, 1).map2(_ - 1).toList shouldBe List(4, 3, 2, 1, 0)
+      }
+
+      "return correct results for empty list" in {
+        Stream.empty[Int].map2(_ * 2) shouldBe Stream.empty[Int]
+      }
+    }
+
     "constant2 method called" should {
       "return correct values" in {
         constant2("A").take(3).toList shouldBe List.fill(3)("A")
