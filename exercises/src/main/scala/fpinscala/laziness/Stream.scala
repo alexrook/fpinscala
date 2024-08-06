@@ -229,6 +229,9 @@ object Stream {
     * Write a more general stream-building function called unfold. It takes an
     * initial state, and a function for producing both the next state and the
     * next value in the generated stream.
+    *
+    * Option is used to indicate when the Stream should be terminated, if at
+    * all. The function `unfold` is a very general Stream-building function.
     */
 
   def unfold[A, S](z: S)(f: S => Option[(A, S)]): Stream[A] =
@@ -237,4 +240,28 @@ object Stream {
         Stream.cons(a, unfold(s)(f))
       }
       .getOrElse(Stream.empty[A])
+
+  /** EXERCISE 5.12
+    *
+    * Write fibs, from, constant, and ones in terms of unfold.8
+    */
+
+  def fibs2: Stream[Int] = unfold((0, 1)) { case ((p1, p2)) =>
+    Some(
+      p1 -> (p2, p1 + p2)
+    )
+  }
+
+  def from2(n: Int): Stream[Int] =
+    unfold(n) { x =>
+      Some(x -> (x + 1))
+    }
+
+  def constant2[A](a: A): Stream[A] =
+    unfold(a) { aa =>
+      Some(aa -> aa)
+    }
+
+  val ones3: Stream[Int] = constant2(1)
+
 }

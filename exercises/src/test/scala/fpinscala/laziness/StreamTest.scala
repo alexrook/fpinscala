@@ -12,6 +12,30 @@ class StreamTest extends AnyWordSpec {
 
   "Custom Stream" when {
 
+    "constant2 method called" should {
+      "return correct values" in {
+        constant2("A").take(3).toList shouldBe List.fill(3)("A")
+        constant2(1).take(10).toList shouldBe List.fill(10)(1)
+
+        ones3.take(0) shouldBe Stream.empty[Int]
+        ones3.take(42).toList shouldBe List.fill(42)(1)
+      }
+    }
+
+    "from2 method called" should {
+      "return correct values" in {
+        from2(-1).take(5).toList shouldBe List(-1, 0, 1, 2, 3)
+
+        from2(1).take(42).toList.contains(42) shouldBe true
+      }
+    }
+
+    "fibs2 method called" should {
+      "return correct values" in {
+        fibs2.take(7).toList shouldBe List(0, 1, 1, 2, 3, 5, 8)
+      }
+    }
+
     "unfold method called" should {
       "return correct values" in {
 
