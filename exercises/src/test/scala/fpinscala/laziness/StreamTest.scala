@@ -38,6 +38,21 @@ class StreamTest extends AnyWordSpec {
 
       }
 
+      // "infinite stream called" in {
+      //   val infiniteStream: Stream[Int] = constant2(1)
+
+      //   infiniteStream
+      //     .scanRightV1(0)(_ + _)
+      //     .take(5)
+      //     .toList shouldBe List(5, 4, 3, 2, 1)
+
+      //   infiniteStream
+      //     .scanRight(0)(_ + _)
+      //     .take(5)
+      //     .toList shouldBe List(5, 4, 3, 2, 1)
+
+      // }
+
       "return correct results for empty streams" in {
         Stream.empty[Int].scanRightV1(0)(_ + _).toList shouldBe List(
           0
