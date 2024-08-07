@@ -281,9 +281,9 @@ trait Stream[+A] {
     * be implemented using another function we’ve written?
     */
 
-  def scanRightV1[B](z: B)(f: (A, B) => B): Stream[B] =
+  def scanRightV1[B](z: B)(f: (A, => B) => B): Stream[B] =
     foldRight(Stream(z)) { case (a, rest) =>
-      val prev = rest.headOption.getOrElse(z)
+      lazy val prev = rest.headOption.getOrElse(z)
       Stream.cons(f(a, prev), rest)
     }
 

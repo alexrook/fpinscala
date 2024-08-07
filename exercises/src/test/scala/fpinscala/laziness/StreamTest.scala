@@ -32,6 +32,10 @@ class StreamTest extends AnyWordSpec {
           0
         )
 
+        val stream = Stream(1, 2, 3, 4, 5)
+        stream.scanRightV1(1)(_ * _).toList shouldBe
+          stream.tails.map(_.toList.product).toList
+
       }
 
       "return correct results for empty streams" in {
