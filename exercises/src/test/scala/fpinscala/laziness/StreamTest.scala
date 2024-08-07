@@ -12,20 +12,60 @@ class StreamTest extends AnyWordSpec {
 
   "Custom Stream" when {
 
-    "tails method called " should {
+    "scanRight method called " should {
 
       "return correct results for non empty streams" in {
-        Stream(1, 2, 3).tails.toList.foreach { stream =>
-          println(stream.toList.mkString(","))
-        }
+        // from exercise
+        Stream(1, 2, 3).scanRightV1(0)(_ + _).toList shouldBe List(
+          1 + 2 + 3 + 0,
+          2 + 3 + 0,
+          3 + 0,
+          0
+        )
 
-        Stream(1, 2, 3, 4, 5).tails.toList.foreach { stream =>
-          println(stream.toList.mkString(start = "[", sep = "", end = "]"))
-        }
+        Stream(1, 2, 3, 4, 5).scanRightV1(0)(_ + _).toList shouldBe List(
+          5 + 4 + 3 + 2 + 1,
+          5 + 4 + 3 + 2,
+          5 + 4 + 3,
+          5 + 4,
+          5 + 0,
+          0
+        )
+
       }
 
       "return correct results for empty streams" in {
-        Stream.empty[Int].tails.toList.map(_.toList) shouldBe List(List.empty[Int])
+        Stream.empty[Int].scanRightV1(0)(_ + _).toList shouldBe List(
+          0
+        ) // TODO or List.empty ?
+      }
+
+    }
+
+    "tails method called " should {
+
+      "return correct results for non empty streams" in {
+        Stream(1, 2, 3).tails.toList.map(_.toList) shouldBe List(
+          List(1, 2, 3),
+          List(2, 3),
+          List(3),
+          List.empty[Int]
+        )
+
+        Stream(1, 2, 3, 4, 5).tails.toList.map(_.toList) shouldBe List(
+          List(1, 2, 3, 4, 5),
+          List(2, 3, 4, 5),
+          List(3, 4, 5),
+          List(4, 5),
+          List(5),
+          List.empty[Int]
+        )
+      }
+
+      "return correct results for empty streams" in {
+        Stream.empty[Int].tails.toList.map(_.toList) shouldBe List(
+          List.empty[Int]
+        )
       }
 
     }
