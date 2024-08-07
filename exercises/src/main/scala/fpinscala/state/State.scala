@@ -1,5 +1,8 @@
 package fpinscala.state
 
+import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.ListBuffer
+
 trait RNG {
   def nextInt: (Int, RNG) // Should generate a random `Int`. We'll later define other functions in terms of `nextInt`.
 }
@@ -61,17 +64,61 @@ object RNG {
     val (halfRet, newRNG) = nonNegativeInt(rng)
     halfRet match {
       case m @ Int.MaxValue => (m - 1).toDouble / m -> newRNG
-      case x                => x.toDouble / Int.MaxValue -> newRNG
+      case x                => (x.toDouble / Int.MaxValue) -> newRNG
     }
   }
 
-  def intDouble(rng: RNG): ((Int, Double), RNG) = ???
+  /** EXERCISE 6.3
+    *
+    * Write functions to generate an (Int, Double) pair, a (Double, Int) pair,
+    * and a (Double, Double, Double) 3-tuple. You should be able to reuse the
+    * functions you’ve already written.
+    */
 
-  def doubleInt(rng: RNG): ((Double, Int), RNG) = ???
+  def intDouble(rng: RNG): ((Int, Double), RNG) = {
+    val (i, rngN) = rng.nextInt
+    val (d, rndR) = double(rngN)
 
-  def double3(rng: RNG): ((Double, Double, Double), RNG) = ???
+    (i, d) -> rndR
 
-  def ints(count: Int)(rng: RNG): (List[Int], RNG) = ???
+  }
+
+  def doubleInt(rng: RNG): ((Double, Int), RNG) = {
+
+    val (d, rndR) = double(rng)
+    val (i, rngN) = rndR.nextInt
+
+    (d, i) -> rndR
+  }
+
+  def double3(rng: RNG): ((Double, Double, Double), RNG) = {
+    val (d1, rnd1) = double(rng)
+    val (d2, rng2) = double(rnd1)
+    val (d3, rng3) = double(rng2)
+
+    (d1, d2, d3) -> rng3
+
+  }
+
+  /** EXERCISE 6.4
+    *
+    * Write a function to generate a list of random integers.
+    */
+  def ints(count: Int)(rng: RNG): (List[Int], RNG) = {
+    val lb = ListBuffer.empty[Int]
+
+    def loop(c: Int, rngN: RNG): RNG =
+      if (c > 0) {
+        val (i, nextRNG) = rngN.nextInt
+        lb += i
+        loop(c - 1, nextRNG)
+      } else {
+        rngN
+      }
+
+    val retRNG = loop(c = count, rngN = rng)
+    lb.toList -> retRNG
+  }
 
   def map2[A, B, C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] = ???
 

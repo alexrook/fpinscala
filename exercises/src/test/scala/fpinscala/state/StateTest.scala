@@ -12,6 +12,29 @@ class StateTest extends AnyWordSpec {
 
   "RNG" when {
 
+    "ints method called" should {
+      "return repetable results" in {
+        val rng = RNG.Simple(42)
+        val (initial, _) = ints(10)(rng)
+
+        for (_ <- 0 to 10) {
+          val (actual, _) = ints(10)(rng)
+          actual should contain theSameElementsAs initial
+        }
+
+      }
+
+      "return correct results for corner cases" in {
+        val rng1 = RNG.Simple(Int.MinValue)
+        val (ret1, _) = ints(10)(rng1)
+        assert(ret1.size == 10)
+
+        val rng2 = RNG.Simple(Int.MaxValue)
+        val (ret2, _) = ints(10)(rng2)
+        assert(ret2.size == 10)
+      }
+    }
+
     "nextInt method called " should {
       "return the same results multiple times" in {
         val rng = RNG.Simple(42)
