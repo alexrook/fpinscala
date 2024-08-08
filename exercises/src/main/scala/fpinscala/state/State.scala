@@ -180,7 +180,27 @@ object RNG {
       lb.toList -> nextRNG
     }
 
-  def flatMap[A, B](f: Rand[A])(g: A => Rand[B]): Rand[B] = ???
+  /** EXERCISE 6.8
+    *
+    * Implement flatMap, and then use it to implement nonNegativeLessThan.
+    */
+  def flatMap[A, B](f: Rand[A])(g: A => Rand[B]): Rand[B] =
+    (rng: RNG) => {
+      val (a, rng1) = f(rng)
+      val ret: (B, RNG) = g(a)(rng1)
+      ret
+    }
+  //TODO:test
+  def nonNegativeLessThan(n: Int): Rand[Int] =
+    flatMap(nonNegativeInt) { x: Int =>
+      val mod = x % n
+      if (x + (n - 1) - mod >= 0)
+        unit(mod)
+      else {
+        nonNegativeLessThan(n)
+      }
+    }
+
 }
 
 case class State[S, +A](run: S => (A, S)) {

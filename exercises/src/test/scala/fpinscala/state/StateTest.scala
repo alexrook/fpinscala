@@ -12,6 +12,42 @@ class StateTest extends AnyWordSpec {
 
   "RNG" when {
 
+    "flatMap method called" should {
+
+      def check[A](rng: RNG, rand: Rand[A]) = {
+        val (initialRet, initialRNG) = rand(rng)
+
+        0 to 10 foreach { _ =>
+          val (actualR, actualRNG) = rand(rng)
+          assert(actualR == initialRet)
+          assert(actualRNG == initialRNG)
+        }
+      }
+      "return correct results" in {
+        val rng = RNG.Simple(42)
+
+        val rand: Rand[Int] =
+          flatMap(nonNegativeInt)(unit)
+
+        val (initialRet, initialRNG) = rand(rng)
+
+        0 to 10 foreach { _ =>
+          val (actualR, actualRNG) = rand(rng)
+          assert(actualR == initialRet)
+          assert(actualRNG == initialRNG)
+        }
+      }
+
+      "return correct results for corner cases" in {
+        val rand: Rand[Int] = flatMap(nonNegativeInt)(unit)
+
+        check(RNG.Simple(Int.MinValue), rand)
+        check(RNG.Simple(Int.MaxValue), rand)
+        check(RNG.Simple(0), rand)
+      }
+
+    }
+
     "sequence method called" should {
 
       def check(rng: RNG, list: List[Rand[Int]]) = {
