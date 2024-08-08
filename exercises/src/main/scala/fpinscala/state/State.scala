@@ -30,8 +30,7 @@ object RNG {
 
   val int: Rand[Int] = _.nextInt
 
-  def unit[A](a: A): Rand[A] =
-    rng => (a, rng)
+  def unit[A](a: A): Rand[A] = rng => (a, rng)
 
   def map[A, B](s: Rand[A])(f: A => B): Rand[B] =
     rng => {
@@ -119,6 +118,17 @@ object RNG {
     val retRNG = loop(c = count, rngN = rng)
     lb.toList -> retRNG
   }
+
+  /** EXERCISE 6.5
+    *
+    * Use map to reimplement double in a more elegant way. See exercise 6.2.
+    */
+
+  def doubleViaMap: Rand[Double] =
+    map(nonNegativeInt) {
+      case m @ Int.MaxValue => (m - 1).toDouble / m
+      case x                => (x.toDouble / Int.MaxValue)
+    }
 
   def map2[A, B, C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] = ???
 
