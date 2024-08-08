@@ -221,12 +221,33 @@ object RNG {
 }
 
 case class State[S, +A](run: S => (A, S)) {
-  def map[B](f: A => B): State[S, B] =
-    ???
+
+  import State._
+
+  /** EXERCISE 6.10
+    *
+    * Generalize the functions unit, map, map2, flatMap, and sequence. Add them
+    * as meth- ods on the State case class where possible. Otherwise you should
+    * put them in a State companion object.
+    */
+
+  def map[B](f: A => B): State[S, B] = flatMap { a =>
+    unit[S,B](f(a))
+  }
+
   def map2[B, C](sb: State[S, B])(f: (A, B) => C): State[S, C] =
-    ???
+    flatMap { a: A =>
+      sb.map { b =>
+        f(a, b)
+      }
+    }
+
   def flatMap[B](f: A => State[S, B]): State[S, B] =
-    ???
+    State[S, B](
+      run.andThen { case ((a, nextState)) =>
+        f(a).run(nextState)
+      }
+    )
 }
 
 sealed trait Input
@@ -236,6 +257,18 @@ case object Turn extends Input
 case class Machine(locked: Boolean, candies: Int, coins: Int)
 
 object State {
+
+  def unit[S, R](r: R): State[S, R] = State((s: S) => (r, s))
+
+  def sequence[S, A](xa: List[State[S, A]]): State[S, List[A]] =
+    xa.foldLeft(unit[S, List[A]](List.empty[A])) {
+      case (acc: State[S, List[A]], elem: State[S, A]) =>
+        acc.flatMap { accList =>
+          elem.map(a => accList :+ a)
+        }
+    }
+ 
   type Rand[A] = State[RNG, A]
   def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] = ???
+
 }
