@@ -190,7 +190,7 @@ object RNG {
       val ret: (B, RNG) = g(a)(rng1)
       ret
     }
-  //TODO:test
+  // TODO:test
   def nonNegativeLessThan(n: Int): Rand[Int] =
     flatMap(nonNegativeInt) { x: Int =>
       val mod = x % n
@@ -198,6 +198,23 @@ object RNG {
         unit(mod)
       else {
         nonNegativeLessThan(n)
+      }
+    }
+
+  /** EXERCISE 6.9
+    *
+    * Reimplement map and map2 in terms of flatMap. The fact that this is
+    * possible is what we’re referring to when we say that flatMap is more
+    * powerful than map and map2.
+    */
+
+  def mapV2[A, B](s: Rand[A])(f: A => B): Rand[B] =
+    flatMap(s)(a => unit(f(a)))
+
+  def map2V2[A, B, C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] =
+    flatMap(ra) { a: A =>
+      map(rb) { b =>
+        f(a, b)
       }
     }
 

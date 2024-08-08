@@ -12,6 +12,65 @@ class StateTest extends AnyWordSpec {
 
   "RNG" when {
 
+    "mapV2 method called " should {
+      "return correct values" in {
+
+        val rng = RNG.Simple(42)
+
+        val rand: Rand[Int] = mapV2(nonNegativeInt)(identity)
+
+        val (initialRet, initialRNG) = rand(rng)
+
+        0 to 10 foreach { _ =>
+          val (actualR, actualRNG) = rand(rng)
+          assert(actualR == initialRet)
+          assert(actualRNG == initialRNG)
+        }
+      }
+
+      "return correct results for corner cases" in {
+
+        def check(rng: RNG) {
+          val (ret1, _) = mapV2(nonNegativeInt)(identity)(rng)
+          assert(ret1 >= 0)
+        }
+
+        check(RNG.Simple(Int.MinValue))
+        check(RNG.Simple(Int.MaxValue))
+        check(RNG.Simple(0))
+      }
+    }
+
+    "map2V2 method called " should {
+      "return correct values" in {
+
+        val rng = RNG.Simple(42)
+
+        val rand: Rand[(Int, Double)] = map2V2(nonNegativeInt, double)(_ -> _)
+
+        val (initialRet, initialRNG) = rand(rng)
+
+        0 to 10 foreach { _ =>
+          val (actualR, actualRNG) = rand(rng)
+          assert(actualR == initialRet)
+          assert(actualRNG == initialRNG)
+        }
+      }
+
+      "return correct results for corner cases" in {
+
+        def check(rng: RNG) {
+          val ((ret1, dbl1), _) = map2V2(nonNegativeInt, double)(_ -> _)(rng)
+          assert(dbl1 >= 0 && dbl1 < 1)
+          assert(ret1 >= 0)
+        }
+
+        check(RNG.Simple(Int.MinValue))
+        check(RNG.Simple(Int.MaxValue))
+        check(RNG.Simple(0))
+      }
+    }
+
     "flatMap method called" should {
 
       def check[A](rng: RNG, rand: Rand[A]) = {
