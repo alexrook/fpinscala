@@ -130,7 +130,35 @@ object RNG {
       case x                => (x.toDouble / Int.MaxValue)
     }
 
-  def map2[A, B, C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] = ???
+  /** cit
+    *
+    * ```Unfortunately, map isn’t powerful enough to implement intDouble and
+    * doubleInt from exercise 6.3. What we need is a new combinator map2 that
+    * can combine two RNG actions into one using a binary rather than unary
+    * function.
+    * ```
+    *
+    * is it ugly ?
+    */
+  def intDouble: Rand[(Int, Double)] = {
+    map(_.nextInt)(identity).andThen { case ((int, rng)) =>
+      val (dbl, nRng) = double(rng = rng)
+      (int -> dbl) -> nRng
+    }
+  }
+
+  /** EXERCISE 6.6
+    *
+    * Write the implementation of map2 based on the following signature. This
+    * function takes two actions, ra and rb, and a function f for combining
+    * their results, and returns a new action that combines them:
+    */
+  def map2[A, B, C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] =
+    map(ra)(identity).andThen { case ((a, rngN)) =>
+      map(rb) { b: B =>
+        f(a, b)
+      }(rngN)
+    }
 
   def sequence[A](fs: List[Rand[A]]): Rand[List[A]] = ???
 
