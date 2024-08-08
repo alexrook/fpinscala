@@ -12,6 +12,34 @@ class StateTest extends AnyWordSpec {
 
   "RNG" when {
 
+    "sequence method called" should {
+
+      def check(rng: RNG, list: List[Rand[Int]]) = {
+        val actual = sequence(list)
+        val (retL: List[Int], retRNG) = actual(rng)
+        if (list.isEmpty) {
+          retRNG shouldEqual rng
+          retL shouldBe empty
+        } else {
+          retRNG should not equal rng
+          retL.size shouldEqual list.size
+        }
+
+      }
+      "return correct results" in {
+        val list: List[Rand[Int]] = List.fill(7)(nonNegativeInt _)
+        val rng = RNG.Simple(42)
+        check(rng, list)
+      }
+
+      "return correct results for corner cases" in {
+        val list: List[Rand[Int]] = List.fill(7)(nonNegativeInt _)
+        check(RNG.Simple(Int.MinValue), list)
+        check(RNG.Simple(Int.MaxValue), list)
+        check(RNG.Simple(0), list)
+      }
+    }
+
     "map2 method called " should {
       "return correct values" in {
 
@@ -35,7 +63,7 @@ class StateTest extends AnyWordSpec {
           assert(dbl1 >= 0 && dbl1 < 1)
           assert(ret1 >= 0)
         }
-        
+
         check(RNG.Simple(Int.MinValue))
         check(RNG.Simple(Int.MaxValue))
         check(RNG.Simple(0))
