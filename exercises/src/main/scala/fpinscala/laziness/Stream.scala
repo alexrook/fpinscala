@@ -286,7 +286,7 @@ trait Stream[+A] {
       lazy val prev = rest.headOption.getOrElse(z)
       Stream.cons(f(a, prev), rest)
     }
-  //this is from book solution
+  // this is from book solution
   def scanRight[B](z: B)(f: (A, => B) => B): Stream[B] =
     foldRight((z, Stream(z)))((a, p0) => {
       // p0 is passed by-name and used in by-name args in f and cons. So use lazy val to ensure only one evaluation...
