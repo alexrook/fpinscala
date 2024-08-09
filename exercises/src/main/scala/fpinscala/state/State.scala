@@ -2,6 +2,7 @@ package fpinscala.state
 
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.ListBuffer
+import fpinscala.state
 
 trait RNG {
   def nextInt: (Int, RNG) // Should generate a random `Int`. We'll later define other functions in terms of `nextInt`.
@@ -232,8 +233,15 @@ case class State[S, +A](run: S => (A, S)) {
     */
 
   def map[B](f: A => B): State[S, B] = flatMap { a =>
-    unit[S,B](f(a))
+    unit[S, B](f(a))
   }
+
+  def mapAlt[B](f: A => B): State[S, B] =
+    State[S, B] {
+      run.andThen { case ((a, nextS)) =>
+        f(a) -> nextS
+      }
+    }
 
   def map2[B, C](sb: State[S, B])(f: (A, B) => C): State[S, C] =
     flatMap { a: A =>
@@ -248,13 +256,23 @@ case class State[S, +A](run: S => (A, S)) {
         f(a).run(nextState)
       }
     )
+
+  def modifyMy(f: S => S): State[S, A] =
+    State { s: S =>
+      run(f(s))
+    }
+
+  def getMy[S]: State[S, S] =
+    State { s: S =>
+      s -> s
+    }
+
+  def setMy(s: S): State[S, A] =
+    State { _: S =>
+      run(s)
+    }
+
 }
-
-sealed trait Input
-case object Coin extends Input
-case object Turn extends Input
-
-case class Machine(locked: Boolean, candies: Int, coins: Int)
 
 object State {
 
@@ -267,8 +285,119 @@ object State {
           elem.map(a => accList :+ a)
         }
     }
- 
+
   type Rand[A] = State[RNG, A]
-  def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] = ???
+
+  def modifyB[S](f: S => S): State[S, Unit] = for {
+    s <- getB // Gets the current state and assigns it to `s`.
+    _ <- setB(f(s)) // Sets the new state to `f` applied to `s`.
+  } yield ()
+
+  def getB[S]: State[S, S] = State(s => (s, s))
+
+  def setB[S](s: S): State[S, Unit] = State(_ => ((), s))
+
+  /** EXERCISE 6.11
+    *
+    * Hard: To gain experience with the use of State, implement a finite state
+    * automaton that models a simple candy dispenser. The machine has two types
+    * of input: you can insert a coin, or you can turn the knob to dispense
+    * candy. It can be in one of two states: locked or unlocked. It also tracks
+    * how many candies are left and how many coins it contains.
+    */
+
+  sealed trait Input
+  case object Coin extends Input
+  case object Turn extends Input
+
+  case class Machine(locked: Boolean, candies: Int, coins: Int) {
+    def tryLock: Machine = copy(
+      locked = candies <= 0 || coins <= 0
+    )
+
+    def isOpen = !locked
+    
+    // конфетки можно добавлять сколько угодно
+    def addCandies(c: Int) = copy(candies = candies + c).tryUnlock
+
+    // монетки можно добавляеть не больше запаса конфет в машине
+    def addCoins(c: Int) =
+      (if (coins + c <= candies) {
+         copy(coins = coins + c)
+       } else {
+         this
+       }).tryUnlock
+
+    def tryUnlock = copy(
+      locked = !canOpen
+    )
+
+    def canOpen = candies > 0 && coins > 0
+
+  }
+
+  object Machine {
+    def empty = Machine(locked = true, candies = 0, coins = 0)
+  }
+
+  def set(machine: Machine, input: Input): Machine =
+    input match {
+      case Coin => machine.addCoins(1)
+      case Turn if machine.isOpen =>
+        val newCandies =
+          if (machine.candies - 1 >= 0) {
+            machine.candies - 1
+          } else {
+            machine.candies
+          }
+
+        val newMachine = machine.copy(candies = newCandies)
+        newMachine.tryLock
+
+      case Turn =>
+        println(s"Warn: The Machine[$machine] is locked")
+        machine
+
+    }
+
+  type CandyMachineState = State[Machine, (Int, Int)]
+
+  def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] =
+    State { intialState: Machine =>
+      val nextState: Machine =
+        inputs.foldLeft(intialState) { case (machine, in) =>
+          set(machine, in)
+        }
+
+      (nextState.candies -> nextState.coins) -> nextState
+    }
+
+  def simulateMachineBookV(inputs: List[Input]): State[Machine, (Int, Int)] =
+    for {
+      _ <- sequence(inputs.map { in =>
+        // эта функция берет текущий стайт и изменяет его через S => S
+        val modifyF: (Machine => Machine) => State[Machine, Unit] =
+          modifyB[Machine]
+
+        // сначала выполнится update и вернет функцию Machine => Machine
+        // затем ее возмет modifyF как аргумент и вернет State[Machine, Unit]
+        val f: Input => State[Machine, Unit] = modifyF compose update
+        f(in)
+
+      })
+      s <- getB
+    } yield (s.coins, s.candies)
+
+  def update = (i: Input) =>
+    (s: Machine) =>
+      (i, s) match {
+        case (_, Machine(_, 0, _))        => s
+        case (Coin, Machine(false, _, _)) => s
+        case (Turn, Machine(true, _, _))  => s
+        case (Coin, Machine(true, candy, coin)) =>
+          Machine(false, candy, coin + 1)
+        case (Turn, Machine(false, candy, coin)) =>
+          Machine(true, candy - 1, coin)
+      }
 
 }

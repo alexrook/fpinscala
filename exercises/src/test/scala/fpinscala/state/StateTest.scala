@@ -5,12 +5,37 @@ import org.scalatest.Assertions._
 import org.scalatest.matchers.should.Matchers._
 import fpinscala.parallelism.Par
 
+import fpinscala.state.State.Machine
+
 class StateTest extends AnyWordSpec {
 
   import fpinscala.state.RNG
   import fpinscala.state.RNG._
 
   "RNG" when {
+
+    "simulateMachine method called " should {
+      import fpinscala.state.State._
+
+      "return correct values" in {
+        val inputs1 =
+          List(
+            Coin,
+            Turn,
+            Coin,
+            Coin
+          )
+
+        val m1: State[State.Machine, (Int, Int)] = simulateMachine(inputs1)
+
+        // val (m1r1R, m1r1S) = m1.run(Machine.empty)
+        // m1r1R shouldBe (0, 3) // три монетки без конфет
+
+        val (m1r2R, m1r2S) = m1.run(Machine.empty.addCandies(3))
+        m1r2R shouldBe (2, 2) // две монетки две конфеты
+
+      }
+    }
 
     "mapV2 method called " should {
       "return correct values" in {
