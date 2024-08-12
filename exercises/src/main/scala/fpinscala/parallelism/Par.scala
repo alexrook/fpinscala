@@ -48,7 +48,7 @@ object Par {
         )
       futures
         .get(0) // from java util List
-        .get() //method from future
+        .get() // method from future
 
     }
 
@@ -93,10 +93,11 @@ object Par {
 
   /** EXERCISE 7.3 Hard
     *
+    * TODO:tests
+    *
     * Fix the implementation of map2 so that it respects the contract of
     * timeouts on Future.
     */
-
   def map2_V2[A, B, C](
       a: Par[A],
       b: Par[B]
@@ -126,6 +127,8 @@ object Par {
         def call = a(es).get
       })
 
+  def lazyUnit[A](a: => A) = fork(unit(a))
+
   def map[A, B](pa: Par[A])(f: A => B): Par[B] =
     map2(pa, unit(()))((a, _) => f(a))
 
@@ -142,6 +145,16 @@ object Par {
       if (run(es)(cond).get)
         t(es) // Notice we are blocking on the result of `cond`.
       else f(es)
+
+  /** EXERCISE 7.4
+    *
+    * TODO: tests
+    *
+    * This API already enables a rich set of operations. Here’s a simple
+    * example: using lazyUnit, write a function to convert any function A => B
+    * to one that evaluates its result asynchronously.
+    */
+  def asyncF[A, B](f: A => B): A => Par[B] = a => lazyUnit(f(a))
 
   /* Gives us infix syntax for `Par`. */
   implicit def toParOps[A](p: Par[A]): ParOps[A] = new ParOps(p)
