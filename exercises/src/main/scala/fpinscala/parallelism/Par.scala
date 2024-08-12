@@ -156,6 +156,18 @@ object Par {
     */
   def asyncF[A, B](f: A => B): A => Par[B] = a => lazyUnit(f(a))
 
+  /** EXERCISE 7.5
+    *
+    * Hard: Write this function, called sequence. No additional primitives are
+    * required. Do not call run.
+    */
+  def sequence[A](xa: List[Par[A]]): Par[List[A]] =
+    xa.foldLeft(unit(List.empty[A])) { case (acc: Par[List[A]], elem: Par[A]) =>
+      map2(acc, elem) { case (list: List[A], a: A) =>
+        list :+ a
+      }
+    } // i'm using List  as accumulator instead of ListBuffer, for simplify EXERCISE.
+
   /* Gives us infix syntax for `Par`. */
   implicit def toParOps[A](p: Par[A]): ParOps[A] = new ParOps(p)
 
