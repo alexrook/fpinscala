@@ -28,11 +28,21 @@ class StateTest extends AnyWordSpec {
 
         val m1: State[State.Machine, (Int, Int)] = simulateMachine(inputs1)
 
-        // val (m1r1R, m1r1S) = m1.run(Machine.empty)
-        // m1r1R shouldBe (0, 3) // три монетки без конфет
+        val (m1r1R, m1r1S) = m1.run(Machine.empty)
+        m1r1R shouldBe (0, 0) // нет монеток и  без конфет
 
         val (m1r2R, m1r2S) = m1.run(Machine.empty.addCandies(3))
         m1r2R shouldBe (2, 2) // две монетки две конфеты
+
+        val (m1r3R, m1r3S) =
+          m1.run(Machine(locked = false, candies = 10, coins = 5))
+        m1r3R shouldBe (9, 8)
+
+        val inputs2 = List.fill(4)(Turn)
+        val m2: State[State.Machine, (Int, Int)] = simulateMachine(inputs2)
+        val (m2r2R, m2r2S) =
+          m2.run(Machine(locked = false, candies = 10, coins = 5))
+        m2r2R shouldBe (6, 5) // четыре конфеты купили (10 - 4 == 6)
 
       }
     }

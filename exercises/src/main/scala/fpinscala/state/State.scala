@@ -316,7 +316,7 @@ object State {
     )
 
     def isOpen = !locked
-    
+
     // конфетки можно добавлять сколько угодно
     def addCandies(c: Int) = copy(candies = candies + c).tryUnlock
 
@@ -362,6 +362,7 @@ object State {
 
   type CandyMachineState = State[Machine, (Int, Int)]
 
+  // возвращает конфеты -> монеты и новый state
   def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] =
     State { intialState: Machine =>
       val nextState: Machine =
@@ -382,7 +383,8 @@ object State {
         // сначала выполнится update и вернет функцию Machine => Machine
         // затем ее возмет modifyF как аргумент и вернет State[Machine, Unit]
         val f: Input => State[Machine, Unit] = modifyF compose update
-        f(in)
+        val item: State[Machine, Unit] = f(in)
+        item
 
       })
       s <- getB
