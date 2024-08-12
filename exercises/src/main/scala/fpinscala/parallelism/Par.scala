@@ -158,6 +158,8 @@ object Par {
 
   /** EXERCISE 7.5
     *
+    * TODO: tests
+    *
     * Hard: Write this function, called sequence. No additional primitives are
     * required. Do not call run.
     */
@@ -167,6 +169,34 @@ object Par {
         list :+ a
       }
     } // i'm using List  as accumulator instead of ListBuffer, for simplify EXERCISE.
+
+  /** EXERCISE 7.6
+    *
+    * TODO: tests
+    *
+    * Implement parFilter, which filters elements of a list in parallel.
+    */
+  def parFilter[A](xa: List[A])(f: A => Boolean): Par[List[A]] =
+    fork {
+      map(sequence(xa.map { elem: A =>
+        asyncF { // выполняем фильтр значения в отдельном потоке
+          f.andThen(_ -> elem)
+        }(elem)
+      }))(_.collect {
+        case (true, value) => // значения для котрых фильтр успешен
+          value
+      })
+    }
+
+  def parFilter_V2[A](xa: List[A])(f: A => Boolean): Par[List[A]] = {
+    val filterF: A => Par[Boolean] = asyncF(f)
+    xa.foldRight(unit(List.empty[A])) { case (elem: A, acc: Par[List[A]]) =>
+      map2(filterF(elem), acc) {
+        case (true, acc)  => acc :+ elem
+        case (false, acc) => acc
+      }
+    }
+  }
 
   /* Gives us infix syntax for `Par`. */
   implicit def toParOps[A](p: Par[A]): ParOps[A] = new ParOps(p)
