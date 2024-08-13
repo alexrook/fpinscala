@@ -190,6 +190,7 @@ object Par {
 
   def parFilter_V2[A](xa: List[A])(f: A => Boolean): Par[List[A]] = {
     val filterF: A => Par[Boolean] = asyncF(f)
+    filterF.compose()
     xa.foldRight(unit(List.empty[A])) { case (elem: A, acc: Par[List[A]]) =>
       map2(filterF(elem), acc) {
         case (true, acc)  => acc :+ elem
@@ -197,6 +198,24 @@ object Par {
       }
     }
   }
+
+  /** EXERCISE 7.7
+    *
+    * Hard: Given map(y)(id) == y, it’s a free theorem that map(map(y)(g))(f) ==
+    * map(y)(f compose g). (This is sometimes called map fusion, and it can be
+    * used as an optimization—rather than spawning a separate parallel
+    * computation to compute the second mapping, we can fold it into the first
+    * mapping.)13 Can you prove it? You may want to read the paper “Theorems for
+    * Free!” (http://mng.bz/Z9f1) to better under- stand the “trick” of free
+    * theorems.
+    */
+    //map(map(y)(g))(f) == map(y)(f compose g)
+    //-- if f == id
+    //map(map(y)(g))(id) == map(y)(id compose g)
+    //-- y = map(y)(g), so 
+    //map(y)(g) == map(y)(id compose g)
+    //-- id compose g == g, so
+    //map(y)(g) == map(y)(g)
 
   /* Gives us infix syntax for `Par`. */
   implicit def toParOps[A](p: Par[A]): ParOps[A] = new ParOps(p)
