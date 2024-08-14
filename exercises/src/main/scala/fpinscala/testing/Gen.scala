@@ -30,21 +30,30 @@ trait Gen[A] {
 
 trait SGen[+A] {}
 
-/** EXERCISE 8.1 
- * 
- * To get used to thinking about testing in this way, come up with
-  * properties that specify the implementation of a sum: List[Int] => Int
-  * function. You don’t have to write your properties down as executable
-  * ScalaCheck code—an informal description is fine. Here are some ideas to get
-  * you started: 
-    - Reversing a list and summing it should give the same result
-  * as summing the original, nonreversed list. 
-  * - What should the sum be if all
-  * elements of the list are the same value? 
-  * - Can you think of other properties
+/** EXERCISE 8.1
+  *
+  * To get used to thinking about testing in this way, come up with properties
+  * that specify the implementation of a sum: List[Int] => Int function. You
+  * don’t have to write your properties down as executable ScalaCheck code—an
+  * informal description is fine. Here are some ideas to get you started:
+  * \- Reversing a list and summing it should give the same result as summing
+  * the original, nonreversed list.
+  *   - What should the sum be if all elements of the list are the same value?
+  *   - Can you think of other properties
   */
 
-  //ns.reverse.sum == ns.sum
-  //List.fill(10)(3).sum == 10*3
-  //List.empty[Number].sum == 0
-  //List(n, n+1, n+2,.. k) == lenght * (n + k) / 2
+//ns.reverse.sum == ns.sum
+//List.fill(10)(3).sum == 10*3
+//List.empty[Number].sum == 0
+//List(n, n+1, n+2,.. k) == lenght * (n + k) / 2
+
+/** EXERCISE 8.2
+  *
+  * What properties specify a function that finds the maximum of a List[Int]?
+  */
+//ns.reverse.max == ns.max
+//List.fill(a)(b).max == b
+//List(a).max == a
+//List.empty[Number].max == error
+//List(n, n+1, n+2,.. k).max == k
+
