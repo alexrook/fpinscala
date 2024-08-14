@@ -91,6 +91,18 @@ object Par {
       )
     }
 
+  def map2_v2[A, B, C](
+      ap: Par[A],
+      bp: Par[B]
+  )(
+      f: (A, B) => C
+  ): Par[C] =
+    flatMap(ap) { a =>
+      map(bp) { b =>
+        f(a, b)
+      }
+    }
+
   /** EXERCISE 7.3 Hard
     *
     * TODO:tests
@@ -262,8 +274,14 @@ object Par {
       }
     }
 
-    def join_V2[A](a: Par[Par[A]]): Par[A] = 
-      flatMap(a)(identity)
+  def flatMap_V2[A, B](a: Par[A])(f: A => Par[B]): Par[B] =
+    es => {
+      val ar = a(es).get()
+      f(ar)(es)
+    }
+
+  def join_V2[A](a: Par[Par[A]]): Par[A] =
+    flatMap(a)(identity)
 
   /** EXERCISE 7.7
     *
