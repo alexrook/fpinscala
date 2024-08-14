@@ -1,0 +1,52 @@
+ def fork[A](a: => Par[A]): Par[A] =
+      es =>
+        new Future[A] {
+          def apply(cb: A => Unit): Unit =
+            eval(
+              es
+            )( // вызов eval поместит код в скобках в другой логический поток
+              a(es) // a(es) return future
+                .apply(cb)
+            )
+        }
+
+fork(unit(1)) ==
+(a: =>
+	 (es) => new Future[A] { def apply(cb: A => Unit): Unit =cb(a)}) =
+      es =>
+        new Future[A] {
+          def apply(cb: A => Unit): Unit =
+            eval(
+              es
+            )( // вызов eval поместит код в скобках в другой логический поток
+              a(es) // a(es) return future
+                .apply(cb)
+            )
+        }
+
+fork(unit(1)) ==
+(a: => (es) => new Future[A] { def apply(cb: A => Unit): Unit =cb(a)}) =
+      es =>
+        new Future[A] {
+          def apply(cb: A => Unit): Unit =
+            eval(
+              es
+            )( // вызов eval поместит код в скобках в другой логический поток
+              new Future[A] { def apply(cb: A => Unit): Unit =cb(a)}) // вызов A
+                .apply(cb)
+            )
+        }
+
+(a: => (es) => new Future[A] { def apply(cb: A => Unit): Unit =cb(a)}) =
+      es =>
+        new Future[A] {
+          def apply(cbOuter: A => Unit): Unit =
+            eval(
+              es
+            )( // вызов eval поместит код в скобках в другой логический поток
+              new Future[A] { def apply(cb: A => Unit): Unit =cb(a)}).apply(cbOuter) ==
+		              new Future[A].apply=cbOuter(a) == cbOuter(a)
+              
+            )
+        }
+
