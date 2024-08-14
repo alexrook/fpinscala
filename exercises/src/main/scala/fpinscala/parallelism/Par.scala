@@ -176,14 +176,23 @@ object Par {
     * }}}
     */
 
-  def choiceF[K, V](key: Par[K])(f: K => Par[V]): Par[V] =
+  def chooser[K, V](key: Par[K])(f: K => Par[V]): Par[V] =
     es => {
       val k = key(es).get()
       f(k)(es)
     }
 
   def choiceMap[K, V](key: Par[K])(choices: Map[K, Par[V]]): Par[V] =
-    choiceF(key)(choices)
+    chooser(key)(choices)
+
+  /** EXERCISE 7.13
+    *
+    * Implement this new primitive chooser, and then use it to implement choice
+    * and choiceN.
+    */
+
+  def choiceN_V2[A](n: Par[Int])(choices: List[Par[A]]): Par[A] =
+    chooser(key = n)(choices)
 
   /** EXERCISE 7.4
     *
