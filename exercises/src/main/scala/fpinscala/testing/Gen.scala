@@ -13,7 +13,22 @@ The library developed in this chapter goes through several iterations. This file
 shell, which you can fill in and modify while working through the chapter.
  */
 
-trait Prop {}
+trait Prop { self =>
+
+  /** EXERCISE 8.3
+    *
+    * Assuming the following representation of Prop, implement && as a method of
+    * * Prop.
+    */
+
+  def check: Boolean
+
+  def &&(p: Prop): Prop =
+    new Prop {
+      def check: Boolean = self.check && p.check
+    }
+
+}
 
 object Prop {
   def forAll[A](gen: Gen[A])(f: A => Boolean): Prop = ???
@@ -35,9 +50,9 @@ trait SGen[+A] {}
   * To get used to thinking about testing in this way, come up with properties
   * that specify the implementation of a sum: List[Int] => Int function. You
   * don’t have to write your properties down as executable ScalaCheck code—an
-  * informal description is fine. Here are some ideas to get you started:
-  * \- Reversing a list and summing it should give the same result as summing
-  * the original, nonreversed list.
+  * informal description is fine. Here are some ideas to get you started: \-
+  * Reversing a list and summing it should give the same result as summing the
+  * original, nonreversed list.
   *   - What should the sum be if all elements of the list are the same value?
   *   - Can you think of other properties
   */
@@ -56,4 +71,3 @@ trait SGen[+A] {}
 //List(a).max == a
 //List.empty[Number].max == error
 //List(n, n+1, n+2,.. k).max == k
-
