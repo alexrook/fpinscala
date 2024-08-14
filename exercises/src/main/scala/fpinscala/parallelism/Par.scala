@@ -246,6 +246,25 @@ object Par {
     }
   }
 
+  /** EXERCISE 7.14
+    *
+    * Implement join. Can you see how to implement flatMap using join? And can
+    * you implement join using flatMap?
+    */
+
+  def join[A](a: Par[Par[A]]): Par[A] =
+    es => a(es).get()(es)
+
+  def flatMap[A, B](a: Par[A])(f: A => Par[B]): Par[B] =
+    join {
+      map(a) { a =>
+        f(a)
+      }
+    }
+
+    def join_V2[A](a: Par[Par[A]]): Par[A] = 
+      flatMap(a)(identity)
+
   /** EXERCISE 7.7
     *
     * Hard: Given map(y)(id) == y, it’s a free theorem that map(map(y)(g))(f) ==
