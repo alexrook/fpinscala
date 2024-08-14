@@ -40,7 +40,7 @@ object Nonblocking {
     def unit[A](a: A): Par[A] =
       es =>
         new Future[A] {
-          def apply(cb: A => Unit): Unit =
+          def apply(cb: A => Unit, eh: Throwable => Unit): Unit =
             cb(a)
         }
 
@@ -68,7 +68,7 @@ object Nonblocking {
     def fork[A](a: => Par[A]): Par[A] =
       es =>
         new Future[A] {
-          def apply(cb: A => Unit): Unit =
+          def apply(cb: A => Unit, eh: Throwable => Unit): Unit =
             eval(
               es
             )( // вызов eval поместит код в скобках в другой логический поток
@@ -83,7 +83,7 @@ object Nonblocking {
       */
     def async[A](f: (A => Unit) => Unit): Par[A] = es =>
       new Future[A] {
-        def apply(k: A => Unit) = f(k)
+        def apply(k: A => Unit, eh:Throwable=>Unit) = f(k)
       }
 
     /** Helper function, for evaluating an action asynchronously, using the
@@ -95,7 +95,7 @@ object Nonblocking {
     def map2[A, B, C](p: Par[A], p2: Par[B])(f: (A, B) => C): Par[C] =
       es =>
         new Future[C] {
-          def apply(cb: C => Unit): Unit = {
+          def apply(cb: C => Unit, eh:Throwable=>Unit): Unit = {
             var ar: Option[A] = None
             var br: Option[B] = None
             val combiner = Actor[Either[A, B]](es) {
@@ -115,7 +115,7 @@ object Nonblocking {
     def map[A, B](p: Par[A])(f: A => B): Par[B] =
       es =>
         new Future[B] {
-          def apply(cb: B => Unit): Unit =
+          def apply(cb: B => Unit, eh:Throwable=>Unit): Unit =
             p(es)(a => eval(es) { cb(f(a)) })
         }
 
@@ -162,7 +162,7 @@ object Nonblocking {
     def choice[A](p: Par[Boolean])(t: Par[A], f: Par[A]): Par[A] =
       es =>
         new Future[A] {
-          def apply(cb: A => Unit): Unit =
+          def apply(cb: A => Unit, eh:Throwable=>Unit): Unit =
             p(es) { b =>
               if (b) eval(es) { t(es)(cb) }
               else eval(es) { f(es)(cb) }

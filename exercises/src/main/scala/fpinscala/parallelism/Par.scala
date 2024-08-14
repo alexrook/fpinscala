@@ -146,6 +146,25 @@ object Par {
         t(es) // Notice we are blocking on the result of `cond`.
       else f(es)
 
+  /** EXERCISE 7.11
+    *
+    * Implement choiceN and then choice in terms of choiceN.
+    */
+
+  def choiceN[A](n: Par[Int])(choices: List[Par[A]]): Par[A] =
+    map2(n, sequence(choices)) { case (n, list) =>
+      list(n)
+    }
+
+  def choice_V2[A](cond: Par[Boolean])(t: Par[A], f: Par[A]): Par[A] =
+    choiceN(map(cond) { b =>
+      if (b) {
+        0
+      } else {
+        1
+      }
+    })(List(t, f))
+
   /** EXERCISE 7.4
     *
     * TODO: tests
@@ -190,7 +209,6 @@ object Par {
 
   def parFilter_V2[A](xa: List[A])(f: A => Boolean): Par[List[A]] = {
     val filterF: A => Par[Boolean] = asyncF(f)
-    filterF.compose()
     xa.foldRight(unit(List.empty[A])) { case (elem: A, acc: Par[List[A]]) =>
       map2(filterF(elem), acc) {
         case (true, acc)  => acc :+ elem
@@ -209,13 +227,13 @@ object Par {
     * Free!” (http://mng.bz/Z9f1) to better under- stand the “trick” of free
     * theorems.
     */
-    //map(map(y)(g))(f) == map(y)(f compose g)
-    //-- if f == id
-    //map(map(y)(g))(id) == map(y)(id compose g)
-    //-- y = map(y)(g), so 
-    //map(y)(g) == map(y)(id compose g)
-    //-- id compose g == g, so
-    //map(y)(g) == map(y)(g)
+  // map(map(y)(g))(f) == map(y)(f compose g)
+  // -- if f == id
+  // map(map(y)(g))(id) == map(y)(id compose g)
+  // -- y = map(y)(g), so
+  // map(y)(g) == map(y)(id compose g)
+  // -- id compose g == g, so
+  // map(y)(g) == map(y)(g)
 
   /* Gives us infix syntax for `Par`. */
   implicit def toParOps[A](p: Par[A]): ParOps[A] = new ParOps(p)
