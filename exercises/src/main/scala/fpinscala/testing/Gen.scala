@@ -44,7 +44,29 @@ trait Gen[A] {
   def flatMap[A, B](f: A => Gen[B]): Gen[B] = ???
 }
 
-case class Gen_v2[A](sample: State[RNG, A])
+case class Gen_v2[A](sample: State[RNG, A]) {
+
+  /** EXERCISE 8.6
+    *
+    * Implement flatMap, and then use it to implement this more dynamic version
+    * of listOfN. Put flatMap and listOfN in the Gen class.
+    */
+  def flatMap[B](f: A => Gen_v2[B]): Gen_v2[B] =
+    Gen_v2[B] {
+      sample.flatMap { a =>
+        f(a).sample
+      }
+    }
+
+  def listOfN(size: Gen_v2[Int]): Gen_v2[List[A]] =
+    size.flatMap { int: Int =>
+      Gen_v2 {
+        State { rng =>
+          RNG.sequence(List.fill(int)(sample.run))(rng)
+        }
+      }
+    }
+}
 
 object Gen_v2 {
 
