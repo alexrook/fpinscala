@@ -8,6 +8,7 @@ import Gen._
 import Prop._
 import java.util.concurrent.{Executors, ExecutorService}
 import scala.collection.mutable.ListBuffer
+import fpinscala.state.RNG.between
 
 /*
 The library developed in this chapter goes through several iterations. This file is just the
@@ -127,7 +128,7 @@ object Gen_v2 {
     * Implement union, for combining two generators of the same type into one,
     * by pulling values from each generator with equal likelihood.
     */
-  def union[A](g1: Gen[A], g2: Gen[A]): Gen[A] =
+  def union[A](g1: Gen_v2[A], g2: Gen_v2[A]): Gen_v2[A] =
     boolean.flatMap { bool: Boolean =>
       if (bool) {
         g1
@@ -135,6 +136,37 @@ object Gen_v2 {
         g2
       }
     }
+
+  /** EXERCISE 8.8
+    *
+    * Implement weighted, a version of union that accepts a weight for each Gen
+    * and generates values from each Gen with probability proportional to its
+    * weight.
+    */
+  def weighted[A](
+      wg1: (Gen_v2[A], Double),
+      wg2: (Gen_v2[A], Double)
+  ): Gen_v2[A] = {
+    val (g1: Gen_v2[A], w1: Double) = wg1
+    val (g2: Gen_v2[A], w2: Double) = wg2
+
+    val wSum: Double = w2 + w1
+    val p1 = w1 / (wSum / 100)
+    val p2 = w2 / (wSum / 100)
+
+    Gen_v2 { // dice
+      State {
+        between(0, 100)
+      }
+    }.flatMap { int => // what fell out on the dice
+      if (int > p1) {
+        g2
+      } else {
+        g1
+      }
+    }
+
+  }
 }
 
 trait SGen[+A] {}
