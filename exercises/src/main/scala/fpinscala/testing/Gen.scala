@@ -7,6 +7,7 @@ import fpinscala.parallelism.Par.Par
 import Gen._
 import Prop._
 import java.util.concurrent.{Executors, ExecutorService}
+import scala.collection.mutable.ListBuffer
 
 /*
 The library developed in this chapter goes through several iterations. This file is just the
@@ -57,6 +58,47 @@ object Gen_v2 {
         rng.between(start, stopExclusive)
       }
     }
+
+  /** EXERCISE 8.5 Let’s see what else we can implement using this
+    * representation of Gen. Try implement- ing unit, boolean, and listOfN.
+    */
+  // Always generates the value a
+  def unit[A](a: => A): Gen_v2[A] =
+    Gen_v2(
+      State.unit(a)
+    )
+
+  def boolean: Gen_v2[Boolean] =
+    Gen_v2 {
+      State { rng: RNG =>
+        val (r, nextRNG) = rng.nextInt
+        (r > 0) -> nextRNG
+      }
+    }
+  // Generates lists of length n using the generator g
+  def listOfN[A](n: Int, g: Gen_v2[A]): Gen_v2[List[A]] = {
+    val acc = ListBuffer.empty[A]
+    def loop(rng: RNG): RNG =
+      if (acc.size >= n) {
+        rng
+      } else {
+        val (a, nextRNG) = g.sample.run(rng)
+        acc += a
+        loop(nextRNG)
+      }
+
+    Gen_v2 {
+      State { rng: RNG =>
+        val next = loop(rng)
+        acc.toList -> next
+      }
+    }
+  }
+
+  def listOfN_v2[A](n: Int, g: Gen_v2[A]): Gen_v2[List[A]] =
+    Gen_v2(
+      State.sequence(List.fill(n)(g.sample))
+    )
 
 }
 
