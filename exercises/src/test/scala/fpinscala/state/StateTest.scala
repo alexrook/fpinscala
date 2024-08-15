@@ -14,6 +14,22 @@ class StateTest extends AnyWordSpec {
 
   "RNG" when {
 
+    "between method called" should {
+
+      "return correct values" in {
+        val rng = RNG.Simple(1000L)
+
+        // val r1: Rand[Int] = between(1, 2)
+        // val (actualR1, actualRNG1) = r1(rng)
+        // println(actualR1)
+
+        val r2: Rand[Int] = between(1000, 2000)
+        val (actualR2, actualRNG2) = r2(rng)
+        println(actualR2)
+
+      }
+    }
+
     "simulateMachine method called " should {
       import fpinscala.state.State._
 

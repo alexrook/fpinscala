@@ -3,9 +3,11 @@ package fpinscala.state
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.ListBuffer
 import fpinscala.state
+import scala.annotation.tailrec
 
 trait RNG {
   def nextInt: (Int, RNG) // Should generate a random `Int`. We'll later define other functions in terms of `nextInt`.
+  def between(low: Int, high: Int): (Int, RNG)
 }
 
 object RNG {
@@ -25,6 +27,24 @@ object RNG {
         nextRNG
       ) // The return value is a tuple containing both a pseudo-random integer and the next `RNG` state.
     }
+
+    // WARN: this method is slow
+    final def between(low: Int, high: Int): (Int, RNG) = {
+
+      @tailrec
+      def loop(rnd: RNG): (Int, RNG) = {
+        val (v, nextRNG) = rnd.nextInt
+        if ((v >= low) && (v < high)) {
+          v -> nextRNG
+        } else {
+          loop(nextRNG)
+        }
+      }
+
+      loop(this)
+
+    }
+
   }
 
   type Rand[+A] = RNG => (A, RNG)
@@ -201,6 +221,17 @@ object RNG {
         nonNegativeLessThan(n)
       }
     }
+
+  def moreOrEqualThan(n: Int): Rand[Int] =
+    flatMap(int) { x: Int =>
+      if (x >= 0)
+        unit(x)
+      else {
+        moreOrEqualThan(n)
+      }
+    }
+
+  def between(low: Int, high: Int): Rand[Int] = _.between(low, high)
 
   /** EXERCISE 6.9
     *

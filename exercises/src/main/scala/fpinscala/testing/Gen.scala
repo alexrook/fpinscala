@@ -43,6 +43,23 @@ trait Gen[A] {
   def flatMap[A, B](f: A => Gen[B]): Gen[B] = ???
 }
 
+case class Gen_v2[A](sample: State[RNG, A])
+
+object Gen_v2 {
+
+  /** Implement Gen.choose using this representation of Gen. It should generate
+    * integers in the range start to stopExclusive. Feel free to use functions
+    * you’ve already written.
+    */
+  def choose(start: Int, stopExclusive: Int): Gen_v2[Int] =
+    Gen_v2 {
+      State { rng: RNG =>
+        rng.between(start, stopExclusive)
+      }
+    }
+
+}
+
 trait SGen[+A] {}
 
 /** EXERCISE 8.1
