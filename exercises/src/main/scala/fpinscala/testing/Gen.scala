@@ -122,6 +122,19 @@ object Gen_v2 {
       State.sequence(List.fill(n)(g.sample))
     )
 
+  /** EXERCISE 8.7
+    *
+    * Implement union, for combining two generators of the same type into one,
+    * by pulling values from each generator with equal likelihood.
+    */
+  def union[A](g1: Gen[A], g2: Gen[A]): Gen[A] =
+    boolean.flatMap { bool: Boolean =>
+      if (bool) {
+        g1
+      } else {
+        g2
+      }
+    }
 }
 
 trait SGen[+A] {}
