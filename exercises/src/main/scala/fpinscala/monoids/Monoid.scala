@@ -41,7 +41,7 @@ object Monoid {
   // data type from Part 2.
 
   import fpinscala.testing._
-  import Prop._
+  import Prop_v1._
   def monoidLaws[A](m: Monoid[A], gen: Gen[A]): Prop = ???
 
   def trimMonoid(s: String): Monoid[String] = ???

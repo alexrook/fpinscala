@@ -5,7 +5,7 @@ import fpinscala.state._
 import fpinscala.parallelism._
 import fpinscala.parallelism.Par.Par
 import Gen._
-import Prop._
+import Prop_v1._
 import java.util.concurrent.{Executors, ExecutorService}
 import scala.collection.mutable.ListBuffer
 import fpinscala.state.RNG.between
@@ -15,7 +15,7 @@ The library developed in this chapter goes through several iterations. This file
 shell, which you can fill in and modify while working through the chapter.
  */
 
-trait Prop { self =>
+trait Prop_v1 { self =>
 
   /** EXERCISE 8.3
     *
@@ -25,15 +25,15 @@ trait Prop { self =>
 
   def check: Boolean
 
-  def &&(p: Prop): Prop =
-    new Prop {
+  def &&(p: Prop_v1): Prop_v1 =
+    new Prop_v1 {
       def check: Boolean = self.check && p.check
     }
 
 }
 
-object Prop {
-  def forAll[A](gen: Gen[A])(f: A => Boolean): Prop = ???
+object Prop_v1 {
+  def forAll[A](gen: Gen[A])(f: A => Boolean): Prop_v1 = ???
 }
 
 object Gen {
@@ -143,7 +143,7 @@ object Gen_v2 {
     * and generates values from each Gen with probability proportional to its
     * weight.
     */
-  def weighted[A](
+  def weighted[A]( //TODO:test
       wg1: (Gen_v2[A], Double),
       wg2: (Gen_v2[A], Double)
   ): Gen_v2[A] = {
@@ -170,7 +170,7 @@ object Gen_v2 {
 }
 
 trait SGen[+A] {}
-
+ 
 /** EXERCISE 8.1
   *
   * To get used to thinking about testing in this way, come up with properties
