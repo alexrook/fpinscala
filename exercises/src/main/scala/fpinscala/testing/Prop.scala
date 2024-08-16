@@ -194,10 +194,30 @@ package object prop {
       * generate lists of the requested size.
       */
 
-    def listOf[A](g: Gen[A]): SGen[List[A]] = 
-      SGen{
-        size =>
-          Gen.listOfN(size,g)
+    def listOf[A](g: Gen[A]): SGen[List[A]] =
+      SGen { size =>
+        Gen.listOfN(size, g)
+      }
+
+    /** EXERCISE 8.13
+      *
+      * Define listOf1 for generating nonempty lists, and then update your
+      * specification of max to use this generator.
+      */
+    def listOf1[A](g: Gen[A]): SGen[List[A]] =
+      listOf(g).flatMap { list =>
+        if (list.nonEmpty) {
+          SGen.unit(list)
+        } else {
+          SGen { _ =>
+            g.map(a => List(a))
+          }
+        }
+      }
+
+    def listOf1_bookV[A](g: Gen[A]): SGen[List[A]] =
+      SGen { size =>
+        Gen.listOfN(size max 1, g)
       }
 
   }
