@@ -3,6 +3,7 @@ package fpinscala.testing
 import fpinscala.state.RNG
 import fpinscala.state.State
 import scala.collection.mutable.ListBuffer
+import fpinscala.datastructures.Tree.size
 
 package object prop {
 
@@ -13,6 +14,14 @@ package object prop {
   type SuccessCount = Int
 
   case class Gen[A](sample: State[RNG, A]) {
+
+    def map[B](f: A => B): Gen[B] =
+      Gen {
+        State { state =>
+          val (a, nextRNG) = sample.run(state)
+          f(a) -> nextRNG
+        }
+      }
 
     /** EXERCISE 8.6
       *
@@ -145,7 +154,39 @@ package object prop {
 
   }
 
-  case class SGen[A](forSize: Int => Gen[A])
+  case class SGen[A](forSize: Int => Gen[A]) {
+
+    /** EXERCISE 8.11
+      *
+      * Not surprisingly, SGen at a minimum supports many of the same operations
+      * as Gen, and the implementations are rather mechanical. Define some
+      * convenience functions on SGen that simply delegate to the corresponding
+      * functions on Gen.
+      */
+
+    def flatMap[B](f: A => SGen[B]): SGen[B] =
+      SGen[B] { size =>
+        forSize(size).flatMap { a =>
+          f(a).forSize(size)
+        }
+      }
+
+    def map[B](f: A => B): SGen[B] =
+      flatMap { a =>
+        SGen.unit(f(a))
+      }
+
+    def map_v2[B](f: A => B): SGen[B] =
+      SGen(size => forSize(size).map(f))
+      
+  }
+
+  object SGen {
+    def unit[A](a: => A): SGen[A] =
+      SGen { _ =>
+        Gen.unit(a)
+      }
+  }
 
   // Prop
   sealed trait Result {
