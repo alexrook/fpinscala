@@ -178,7 +178,7 @@ package object prop {
 
     def map_v2[B](f: A => B): SGen[B] =
       SGen(size => forSize(size).map(f))
-      
+
   }
 
   object SGen {
@@ -186,6 +186,20 @@ package object prop {
       SGen { _ =>
         Gen.unit(a)
       }
+
+    /** EXERCISE 8.12
+      *
+      * Implement a listOf combinator that doesn’t accept an explicit size. It
+      * should return an SGen instead of a Gen. The implementation should
+      * generate lists of the requested size.
+      */
+
+    def listOf[A](g: Gen[A]): SGen[List[A]] = 
+      SGen{
+        size =>
+          Gen.listOfN(size,g)
+      }
+
   }
 
   // Prop
