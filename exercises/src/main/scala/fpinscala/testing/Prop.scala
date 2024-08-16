@@ -4,6 +4,9 @@ import fpinscala.state.RNG
 import fpinscala.state.State
 import scala.collection.mutable.ListBuffer
 import fpinscala.datastructures.Tree.size
+import fpinscala.testing.Prop_v1.forAll
+import fpinscala.datastructures.List.length
+import fpinscala.errorhandling.Either.right
 
 package object prop {
 
@@ -32,15 +35,6 @@ package object prop {
       Gen[B] {
         sample.flatMap { a =>
           f(a).sample
-        }
-      }
-
-    def listOfN(size: Gen[Int]): Gen[List[A]] =
-      size.flatMap { int: Int =>
-        Gen {
-          State { rng =>
-            RNG.sequence(List.fill(int)(sample.run))(rng)
-          }
         }
       }
 
@@ -106,6 +100,13 @@ package object prop {
       Gen(
         State.sequence(List.fill(n)(g.sample))
       )
+
+    def listOfMaxN[A](size: Gen[Int], g: Gen[A]): Gen[List[A]] =
+      size.flatMap { s: Int =>
+        Gen {
+          State.sequence(List.fill(s)(g.sample))
+        }
+      }
 
     /** EXERCISE 8.7
       *
@@ -290,5 +291,35 @@ package object prop {
         s"stack trace:\n ${e.getStackTrace.mkString("\n")}"
 
   }
+
+  /** EXERCISE 8.14
+    *
+    * Write a property to verify the behavior of List.sorted (API docs link:
+    * http://mng.bz/ Pz86), which you can use to sort (among other things) a
+    * List[Int].7 For instance, List(2,1,3).sorted is equal to List(1,2,3).
+    */
+  val sortedProperty: Prop =
+    Prop.forAll(
+      Gen.listOfMaxN(
+        size = Gen.choose(0, 100),
+        g = Gen.choose(Int.MinValue, Int.MaxValue)
+      )
+    ) { list: List[Int] =>
+      val actual = list.sorted
+      if (actual.isEmpty) {
+        list.isEmpty
+      } else {
+        val smallest = list.min
+        val bigest = list.max
+        smallest == actual.head
+        bigest == actual.last
+        actual
+          .foldLeft(true -> actual.head) { case ((ret, prev), next) =>
+            (next >= prev) -> next
+          }
+          ._1
+      }
+
+    }
 
 }
