@@ -34,6 +34,14 @@ package object prop {
           }
         }
       }
+
+    /** EXERCISE 8.10
+      *
+      * Implement helper functions for converting Gen to SGen. You can add this
+      * as a method on Gen.
+      */
+
+    def unsized = SGen(_ => this)
   }
 
   object Gen {
@@ -134,8 +142,12 @@ package object prop {
       }
 
     }
+
   }
 
+  case class SGen[A](forSize: Int => Gen[A])
+
+  // Prop
   sealed trait Result {
     def isFalsified: Boolean
 
