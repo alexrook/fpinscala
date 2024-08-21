@@ -18,6 +18,24 @@ package object prop {
 
   case class Gen[A](sample: State[RNG, A]) {
 
+    def map2[B, C](g: Gen[B])(f: (A, B) => C): Gen[C] =
+      flatMap { a =>
+        g.map { b =>
+          f(a, b)
+        }
+      }
+
+    def **[B](g: Gen[B]): Gen[(A, B)] =
+      flatMap { a =>
+        g.map { b =>
+          a -> b
+        }
+      }
+
+    // object ** {
+    //   def unapply[A, B](p: (A, B)) = Some(p)
+    // }
+
     def map[B](f: A => B): Gen[B] =
       Gen {
         State { state =>
@@ -183,6 +201,7 @@ package object prop {
   }
 
   object SGen {
+
     def unit[A](a: => A): SGen[A] =
       SGen { _ =>
         Gen.unit(a)
@@ -229,6 +248,10 @@ package object prop {
 
   }
 
+  case object Proved extends Result {
+    def isFalsified = false
+  }
+
   case object Passed extends Result {
     def isFalsified = false
   }
@@ -252,8 +275,8 @@ package object prop {
     def &&(that: Prop): Prop =
       Prop { (testCases, rng) =>
         this.run(testCases, rng) match {
-          case Passed               => that.run(testCases, rng)
           case falsified: Falsified => falsified
+          case other                => that.run(testCases, rng)
         }
       }
 
@@ -261,7 +284,7 @@ package object prop {
       Prop { (testCases, rng) =>
         this.run(testCases, rng) match {
           case falsified: Falsified => that.run(testCases, rng)
-          case _: Passed.type       => Passed
+          case other                => other
         }
       }
   }
@@ -290,7 +313,39 @@ package object prop {
         s"generated an exception: ${e.getMessage}\n" +
         s"stack trace:\n ${e.getStackTrace.mkString("\n")}"
 
+    def run(
+        p: Prop,
+        maxSize: Int = 100,
+        testCases: Int = 100,
+        rng: RNG = RNG.Simple(System.currentTimeMillis)
+    ): Unit =
+      p.run(testCases, rng) match {
+        case Falsified(msg, n) =>
+          println(s"! Falsified after $n passed tests:\n $msg")
+        case Passed =>
+          println(s"+ OK, passed $testCases tests.")
+        case Proved =>
+          println(s"+ OK, proved property.")
+      }
+
   }
+
+  /** EXERCISE 8.15 Hard: //TODO
+    *
+    * A check property is easy to prove conclusively because the test just
+    * involves eval- uating the Boolean argument. But some forAll properties can
+    * be proved as well. For instance, if the domain of the property is Boolean,
+    * then there are really only two cases to test. If a property forAll(p)
+    * passes for both p(true) and p(false), then it is proved. Some domains
+    * (like Boolean and Byte) are so small that they can be exhaus- tively
+    * checked. And with sized generators, even infinite domains can be
+    * exhaustively Licensed to Alex Rook <alex.f.grach@gmail.com>140 CHAPTER 8
+    * Property-based testing checked up to the maximum size. Automated testing
+    * is very useful, but it’s even better if we can automatically prove our
+    * code correct. Modify our library to incorporate this kind of exhaustive
+    * checking of finite domains and sized generators. This is less of an exer-
+    * cise and more of an extensive, open-ended design project.
+    */
 
   /** EXERCISE 8.14
     *
