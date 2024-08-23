@@ -38,19 +38,33 @@ object Monoid {
       def zero: Int = 1
     }
 
-  val booleanOr: Monoid[Boolean] = 
+  val booleanOr: Monoid[Boolean] =
     new Monoid[Boolean] {
       def op(a1: Boolean, a2: Boolean): Boolean = a1 || a2
       def zero: Boolean = false
     }
 
-  val booleanAnd: Monoid[Boolean] = 
+  val booleanAnd: Monoid[Boolean] =
     new Monoid[Boolean] {
       def op(a1: Boolean, a2: Boolean): Boolean = a1 && a2
       def zero: Boolean = true
     }
 
-  def optionMonoid[A]: Monoid[Option[A]] = ???
+  /** EXERCISE 10.2
+    *
+    * Give a Monoid instance for combining Option values
+    *
+    * @note
+    *   simple monoid ignores left values for more suitable we should use
+    *   optionMonoid[A:Monoid]
+    */
+  def optionMonoid[A]: Monoid[Option[A]] =
+    new Monoid[Option[A]] {
+      def op(a1: Option[A], a2: Option[A]): Option[A] =
+        a1.flatMap(_ => a2)
+
+      def zero: Option[A] = None
+    }
 
   def endoMonoid[A]: Monoid[A => A] = ???
 
