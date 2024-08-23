@@ -60,11 +60,23 @@ object Monoid {
     */
   def optionMonoid[A]: Monoid[Option[A]] =
     new Monoid[Option[A]] {
-      def op(a1: Option[A], a2: Option[A]): Option[A] = a1
+      def op(a1: Option[A], a2: Option[A]): Option[A] = a1 orElse a2
       def zero: Option[A] = None
     }
 
-  def endoMonoid[A]: Monoid[A => A] = ???
+  /** EXERCISE 10.3
+    *
+    * A function having the same argument and return type is sometimes called an
+    * endofunction. Write a monoid for endofunctions
+    */
+  def endoMonoid[A]: Monoid[A => A] =
+    new Monoid[A => A] {
+      def op(a1: A => A, a2: A => A): A => A =
+        a1.compose(a2)
+
+      def zero: A => A = identity
+
+    }
 
   // TODO: Placeholder for `Prop`. Remove once you have implemented the `Prop`
   // data type from Part 2.
@@ -107,7 +119,7 @@ object Monoid {
   def parFoldMap[A, B](v: IndexedSeq[A], m: Monoid[B])(f: A => B): Par[B] =
     ???
 
-  val wcMonoid: Monoid[WC] = ???
+  lazy val wcMonoid: Monoid[WC] = ??? // TODO: remove lazy after impl
 
   def count(s: String): Int = ???
 
@@ -188,4 +200,52 @@ object OptionFoldable extends Foldable[Option] {
     ???
   override def foldRight[A, B](as: Option[A])(z: B)(f: (A, B) => B) =
     ???
+}
+
+object MonoidTest extends App { // TODO: replace with testing via Prop
+
+  // Associative law
+  def assocLaw[A](x: A, y: A, z: A)(monoid: Monoid[A]): Boolean = {
+    val ret = monoid.op(monoid.op(x, y), z) == monoid.op(x, monoid.op(y, z))
+    if (ret) {
+      ret
+    } else {
+      println(s"The folowing args breaks assoc law[$x, $y, $z]")
+      ret
+    }
+  }
+
+  // id element law
+  def zeroLaw[A](x: A)(monoid: Monoid[A]): Boolean = {
+    import monoid._
+    val ret = op(x, zero) == x && op(zero, x) == x
+    if (ret) {
+      ret
+    } else {
+      println(s"The folowing arg breaks zero law[$x]")
+      ret
+    }
+  }
+
+  import Monoid._
+  def test_option(): Unit = {
+    val al = assocLaw(None, Some(1), Some(3))(optionMonoid) &&
+      assocLaw(Some(2): Option[Int], Some(1), Some(3))(optionMonoid) &&
+      assocLaw(Some(2), None, Some(3))(optionMonoid) &&
+      assocLaw(Some(2), Some(1), None)(optionMonoid) &&
+      assocLaw(Some(2), None, None)(optionMonoid) &&
+      assocLaw(None, Option.empty[Int], None)(optionMonoid) &&
+      assocLaw(None, None, Some(2))(optionMonoid)
+
+    println(s"Assoc Law[$al]")
+
+    val zl = zeroLaw(None: Option[Int])(optionMonoid) && zeroLaw(
+      Some("A"): Option[String]
+    )(optionMonoid)
+    println(s"Zero Law[$zl]")
+
+  }
+
+  test_option()
+
 }
