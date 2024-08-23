@@ -3,6 +3,7 @@ package fpinscala.monoids
 import fpinscala.parallelism.Nonblocking._
 import fpinscala.parallelism.Nonblocking.Par.toParOps // infix syntax for `Par.map`, `Par.flatMap`, etc
 import language.higherKinds
+import fpinscala.iomonad.IO3.Console.printLn
 
 trait Monoid[A] {
   def op(a1: A, a2: A): A
@@ -73,6 +74,7 @@ object Monoid {
     new Monoid[A => A] {
       def op(a1: A => A, a2: A => A): A => A =
         a1.compose(a2)
+      //  a1.andThen(a2)
 
       def zero: A => A = identity
 
@@ -205,8 +207,16 @@ object OptionFoldable extends Foldable[Option] {
 object MonoidTest extends App { // TODO: replace with testing via Prop
 
   // Associative law
-  def assocLaw[A](x: A, y: A, z: A)(monoid: Monoid[A]): Boolean = {
-    val ret = monoid.op(monoid.op(x, y), z) == monoid.op(x, monoid.op(y, z))
+  def assocLaw[A](x: A, y: A, z: A)(
+      monoid: Monoid[A],
+      compare: (A, A) => Boolean = (a1: A, a2: A) => a1 == a2
+  ): Boolean = {
+    val ret =
+      compare(
+        monoid.op(monoid.op(x, y), z),
+        monoid.op(x, monoid.op(y, z))
+      )
+
     if (ret) {
       ret
     } else {
@@ -216,9 +226,21 @@ object MonoidTest extends App { // TODO: replace with testing via Prop
   }
 
   // id element law
-  def zeroLaw[A](x: A)(monoid: Monoid[A]): Boolean = {
+  def zeroLaw[A](x: A)(
+      monoid: Monoid[A],
+      compare: (A, A) => Boolean = (a1: A, a2: A) => a1 == a2
+  ): Boolean = {
     import monoid._
-    val ret = op(x, zero) == x && op(zero, x) == x
+    val ret =
+      compare(
+        op(x, zero),
+        x
+      ) &&
+        compare(
+          op(zero, x),
+          x
+        )
+
     if (ret) {
       ret
     } else {
@@ -237,15 +259,57 @@ object MonoidTest extends App { // TODO: replace with testing via Prop
       assocLaw(None, Option.empty[Int], None)(optionMonoid) &&
       assocLaw(None, None, Some(2))(optionMonoid)
 
-    println(s"Assoc Law[$al]")
+    println(s"OptionMonoid Assoc Law[$al]")
 
     val zl = zeroLaw(None: Option[Int])(optionMonoid) && zeroLaw(
       Some("A"): Option[String]
     )(optionMonoid)
-    println(s"Zero Law[$zl]")
+    println(s"OptionMonoid Zero Law[$zl]")
 
   }
 
   test_option()
+
+  def testEndoMonoid(): Unit = {
+    val f1: Int => Int = _ + 1
+    val f2: Int => Int = _ - 4
+    val f3: Int => Int = _ * 45
+
+    def compare(v: Int): (Int => Int, Int => Int) => Boolean =
+      (f1, f2) => f1(v) == f2(v)
+
+    val tf1: Int => Int =
+      endoMonoid.op(endoMonoid.op(f1, f2), f3)
+
+    val tf2: Int => Int =
+      endoMonoid.op(f1, endoMonoid.op(f2, f3))
+
+    val r = tf1(125)
+    println(r)
+    println(s"tf1(17)[${tf1(23)}], tf2(17)[${tf2(17)}]")
+
+    val al =
+      assocLaw(f1, f2, f3)(endoMonoid, compare(1)) &&
+        assocLaw(f3, f1, f2)(endoMonoid, compare(2)) &&
+        assocLaw(f2, f3, f1)(endoMonoid, compare(3)) &&
+        assocLaw(f1, f3, f2)(endoMonoid, compare(4))
+
+    println(s"EndoMonoid Assoc Law[$al]")
+
+    val zl =
+      zeroLaw(f1)(endoMonoid, compare(1)) &&
+        zeroLaw(f2)(
+          endoMonoid,
+          compare(2)
+        ) && zeroLaw(f3)(endoMonoid, compare(3)) &&
+        zeroLaw(identity[Int] _)(
+          endoMonoid,
+          compare(4)
+        )
+
+    println(s"EndoMonoid Zero Law[$al]")
+  }
+
+  testEndoMonoid()
 
 }
