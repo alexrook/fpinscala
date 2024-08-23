@@ -21,13 +21,34 @@ object Monoid {
     val zero = Nil
   }
 
-  val intAddition: Monoid[Int] = ???
+  /** EXERCISE 10.1
+    *
+    * Give Monoid instances for integer addition and multiplication as well as
+    * the Boolean operators.
+    */
+  val intAddition: Monoid[Int] =
+    new Monoid[Int] {
+      def op(a1: Int, a2: Int): Int = a1 + a2
+      def zero: Int = 0
+    }
 
-  val intMultiplication: Monoid[Int] = ???
+  val intMultiplication: Monoid[Int] =
+    new Monoid[Int] {
+      def op(a1: Int, a2: Int): Int = a1 * a2
+      def zero: Int = 1
+    }
 
-  val booleanOr: Monoid[Boolean] = ???
+  val booleanOr: Monoid[Boolean] = 
+    new Monoid[Boolean] {
+      def op(a1: Boolean, a2: Boolean): Boolean = a1 || a2
+      def zero: Boolean = false
+    }
 
-  val booleanAnd: Monoid[Boolean] = ???
+  val booleanAnd: Monoid[Boolean] = 
+    new Monoid[Boolean] {
+      def op(a1: Boolean, a2: Boolean): Boolean = a1 && a2
+      def zero: Boolean = true
+    }
 
   def optionMonoid[A]: Monoid[Option[A]] = ???
 
@@ -68,23 +89,23 @@ object Monoid {
   case class Stub(chars: String) extends WC
   case class Part(lStub: String, words: Int, rStub: String) extends WC
 
-  def par[A](m: Monoid[A]): Monoid[Par[A]] = 
+  def par[A](m: Monoid[A]): Monoid[Par[A]] =
     ???
 
-  def parFoldMap[A,B](v: IndexedSeq[A], m: Monoid[B])(f: A => B): Par[B] = 
+  def parFoldMap[A, B](v: IndexedSeq[A], m: Monoid[B])(f: A => B): Par[B] =
     ???
 
   val wcMonoid: Monoid[WC] = ???
 
   def count(s: String): Int = ???
 
-  def productMonoid[A,B](A: Monoid[A], B: Monoid[B]): Monoid[(A, B)] =
+  def productMonoid[A, B](A: Monoid[A], B: Monoid[B]): Monoid[(A, B)] =
     ???
 
-  def functionMonoid[A,B](B: Monoid[B]): Monoid[A => B] =
+  def functionMonoid[A, B](B: Monoid[B]): Monoid[A => B] =
     ???
 
-  def mapMergeMonoid[K,V](V: Monoid[V]): Monoid[Map[K, V]] =
+  def mapMergeMonoid[K, V](V: Monoid[V]): Monoid[Map[K, V]] =
     ???
 
   def bag[A](as: IndexedSeq[A]): Map[A, Int] =
@@ -156,4 +177,3 @@ object OptionFoldable extends Foldable[Option] {
   override def foldRight[A, B](as: Option[A])(z: B)(f: (A, B) => B) =
     ???
 }
-
