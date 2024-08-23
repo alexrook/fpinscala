@@ -55,14 +55,12 @@ object Monoid {
     * Give a Monoid instance for combining Option values
     *
     * @note
-    *   simple monoid ignores left values for more suitable we should use
-    *   optionMonoid[A:Monoid]
+    *   simple monoid ignores right values for more suitable we should use
+    *   optionMonoid[A:Monoid] ?
     */
   def optionMonoid[A]: Monoid[Option[A]] =
     new Monoid[Option[A]] {
-      def op(a1: Option[A], a2: Option[A]): Option[A] =
-        a1.flatMap(_ => a2)
-
+      def op(a1: Option[A], a2: Option[A]): Option[A] = a1
       def zero: Option[A] = None
     }
 
