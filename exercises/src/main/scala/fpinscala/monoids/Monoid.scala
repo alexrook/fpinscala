@@ -321,17 +321,32 @@ object StreamFoldable extends Foldable[Stream] {
     as.foldLeft(z)(f)
 }
 
+/** EXERCISE 10.13
+  *
+  * Recall the binary Tree data type from chapter 3. Implement a Foldable
+  * instance for it.
+  */
 sealed trait Tree[+A]
 case class Leaf[A](value: A) extends Tree[A]
 case class Branch[A](left: Tree[A], right: Tree[A]) extends Tree[A]
 
 object TreeFoldable extends Foldable[Tree] {
   override def foldMap[A, B](as: Tree[A])(f: A => B)(mb: Monoid[B]): B =
-    ???
-  override def foldLeft[A, B](as: Tree[A])(z: B)(f: (B, A) => B) =
-    ???
-  override def foldRight[A, B](as: Tree[A])(z: B)(f: (A, B) => B) =
-    ???
+    as match {
+      case Leaf(value) => f(value)
+      case Branch(left, right) =>
+        val leftB: B = foldMap(left)(f)(mb)
+        val rightB = foldMap(right)(f)(mb)
+        mb.op(leftB, rightB)
+    }
+  override def foldLeft[A, B](as: Tree[A])(z: B)(f: (B, A) => B) = {
+    val f1: A => (B => B) = a => b => f(b, a)
+    foldMap(as)(f1.apply)(endoMonoid)(z)
+  }
+  override def foldRight[A, B](as: Tree[A])(z: B)(f: (A, B) => B) = {
+    val f1: A => (B => B) = f.curried
+    foldMap(as)(f1.apply)(endoMonoid)(z)
+  }
 }
 
 object OptionFoldable extends Foldable[Option] {
