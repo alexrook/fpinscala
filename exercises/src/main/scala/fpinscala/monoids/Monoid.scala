@@ -4,6 +4,7 @@ import fpinscala.parallelism.Nonblocking._
 import fpinscala.parallelism.Nonblocking.Par.toParOps // infix syntax for `Par.map`, `Par.flatMap`, etc
 import language.higherKinds
 import fpinscala.iomonad.IO3.Console.printLn
+import fpinscala.monoids.Monoid.endoMonoid
 
 trait Monoid[A] {
   def op(left: A, right: A): A
@@ -153,13 +154,6 @@ object Monoid {
       case Nil                 => m.zero
     }
 
-  def ordered(ints: IndexedSeq[Int]): Boolean =
-    ???
-
-  sealed trait WC
-  case class Stub(chars: String) extends WC
-  case class Part(lStub: String, words: Int, rStub: String) extends WC
-
   /** EXERCISE 10.8 Hard:
     *
     * Also implement a parallel version of foldMap using the library we
@@ -213,7 +207,25 @@ object Monoid {
 
   }
 
-  lazy val wcMonoid: Monoid[WC] = ??? // TODO: remove lazy after impl
+  /** EXERCISE 10.9 Hard
+    *
+    * Use foldMap to detect whether a given IndexedSeq[Int] is ordered. You’ll
+    * need to come up with a creative Monoid.
+    */
+  def ordered(ints: IndexedSeq[Int]): Boolean = ??? // TODO
+
+  sealed trait WC
+  case class Stub(chars: String) extends WC
+  // case class Part(lStub: String, words: Int, rStub: String) extends WC
+  case class Part_v2(lStub: Boolean, words: Int, rStub: Boolean) extends WC
+
+  /** EXERCISE 10.10
+    *
+    * Write a monoid instance for WC and make sure that it meets the monoid
+    * laws.
+    */
+
+  lazy val wcMonoid: Monoid[WC] = ???
 
   def count(s: String): Int = ???
 
@@ -233,45 +245,80 @@ object Monoid {
 trait Foldable[F[_]] {
   import Monoid._
 
-  def foldRight[A, B](as: F[A])(z: B)(f: (A, B) => B): B =
-    ???
+  def foldRight[A, B](as: F[A])(z: B)(f: (A, B) => B): B
 
-  def foldLeft[A, B](as: F[A])(z: B)(f: (B, A) => B): B =
-    ???
+  def foldLeft[A, B](as: F[A])(z: B)(f: (B, A) => B): B
 
   def foldMap[A, B](as: F[A])(f: A => B)(mb: Monoid[B]): B =
-    ???
+    foldLeft(as)(mb.zero) { case (b, a) =>
+      mb.op(b, f(a))
+    }
 
   def concatenate[A](as: F[A])(m: Monoid[A]): A =
-    ???
+    foldMap(as)(identity)(m)
 
   def toList[A](as: F[A]): List[A] =
-    ???
+    foldLeft(as)(List.empty[A]) { case (acc, a) =>
+      a +: acc
+    }.reverse
+
 }
 
+/** EXERCISE 10.12
+  *
+  * Implement Foldable[List], Foldable[IndexedSeq], and Foldable[Stream].
+  * Remember that foldRight, foldLeft, and foldMap can all be implemented in
+  * terms of each other, but that might not be the most efficient
+  * implementation.
+  */
 object ListFoldable extends Foldable[List] {
-  override def foldRight[A, B](as: List[A])(z: B)(f: (A, B) => B) =
-    ???
-  override def foldLeft[A, B](as: List[A])(z: B)(f: (B, A) => B) =
-    ???
+  override def foldRight[A, B](as: List[A])(z: B)(f: (A, B) => B) = {
+    def loop(acc: B, xa: List[A]): B =
+      xa match {
+        case head :: next =>
+          loop(f(head, acc), next)
+        case Nil => acc
+      }
+    loop(z, as.reverse)
+  }
+
+  override def foldLeft[A, B](as: List[A])(z: B)(f: (B, A) => B) = {
+    def loop(acc: B, xa: List[A]): B =
+      xa match {
+        case head :: next =>
+          loop(f(acc, head), next)
+        case Nil => acc
+      }
+    loop(z, as)
+  }
   override def foldMap[A, B](as: List[A])(f: A => B)(mb: Monoid[B]): B =
-    ???
+    foldLeft(as)(mb.zero) { case (b, a) =>
+      mb.op(b, f(a))
+    }
 }
 
 object IndexedSeqFoldable extends Foldable[IndexedSeq] {
-  override def foldRight[A, B](as: IndexedSeq[A])(z: B)(f: (A, B) => B) =
-    ???
-  override def foldLeft[A, B](as: IndexedSeq[A])(z: B)(f: (B, A) => B) =
-    ???
+  override def foldRight[A, B](as: IndexedSeq[A])(z: B)(f: (A, B) => B) = {
+    val f1: A => (B => B) = f.curried
+
+    foldMap(as)(f1.apply)(endoMonoid)(z)
+  }
+
+  override def foldLeft[A, B](as: IndexedSeq[A])(z: B)(f: (B, A) => B) = {
+    val f1: A => B => B = a => b => f(b, a)
+    foldMap(as)(f1.apply)(endoMonoid)(z)
+  }
+
   override def foldMap[A, B](as: IndexedSeq[A])(f: A => B)(mb: Monoid[B]): B =
-    ???
+    Monoid.foldMapV(as, mb)(f)
+
 }
 
 object StreamFoldable extends Foldable[Stream] {
   override def foldRight[A, B](as: Stream[A])(z: B)(f: (A, B) => B) =
-    ???
+    as.foldRight(z)(f)
   override def foldLeft[A, B](as: Stream[A])(z: B)(f: (B, A) => B) =
-    ???
+    as.foldLeft(z)(f)
 }
 
 sealed trait Tree[+A]
@@ -360,7 +407,7 @@ object MonoidTest extends App { // TODO: replace with testing via Prop
 
   }
 
-  test_option()
+  // test_option()
 
   def testEndoMonoid(): Unit = {
     val f1: Int => Int = _ + 1
@@ -402,6 +449,8 @@ object MonoidTest extends App { // TODO: replace with testing via Prop
     println(s"EndoMonoid Zero Law[$al]")
   }
 
-  testEndoMonoid()
+  // testEndoMonoid()
+
+  println(count("lorem ipsum dolor sit amet, "))
 
 }
