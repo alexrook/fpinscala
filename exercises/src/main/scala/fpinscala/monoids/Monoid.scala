@@ -160,11 +160,58 @@ object Monoid {
   case class Stub(chars: String) extends WC
   case class Part(lStub: String, words: Int, rStub: String) extends WC
 
-  def par[A](m: Monoid[A]): Monoid[Par[A]] =
-    ???
+  /** EXERCISE 10.8 Hard:
+    *
+    * Also implement a parallel version of foldMap using the library we
+    * developed in chapter 7. Hint: Implement par, a combinator to promote
+    * Monoid[A] to a Monoid [Par[A]],5 and then use this to implement
+    * parFoldMap.
+    */
+  import fpinscala.parallelism.Nonblocking._
 
-  def parFoldMap[A, B](v: IndexedSeq[A], m: Monoid[B])(f: A => B): Par[B] =
-    ???
+  def par[A](m: Monoid[A]): Monoid[Par[A]] =
+    new Monoid[Par[A]] {
+      def op(left: Par[A], right: Par[A]): Par[A] =
+        Par.map2(left, right)(m.op)
+
+      def zero: Par[A] = Par.unit(m.zero)
+    }
+
+  // TODO: split parallel
+  def parFoldMap_V1[A, B](xa: IndexedSeq[A], m: Monoid[B])(
+      f: A => B
+  ): Par[B] = {
+    val parM: Monoid[Par[B]] = par(m)
+    foldMapV(xa, parM)(a => Par.unit(f(a)))
+  }
+
+  def parFoldMap_V2[A, B](xa: IndexedSeq[A], m: Monoid[B])(
+      f: A => B
+  ): Par[B] = {
+    val parM: Monoid[Par[B]] = par(m)
+
+    def loop(xa: IndexedSeq[A]): Par[B] =
+      xa match {
+        case Nil => Par.unit(m.zero)
+
+        case first +: Nil => Par.delay(f(first))
+
+        case sq =>
+          val parSplitted: Par[(IndexedSeq[A], IndexedSeq[A])] =
+            Par.delay(sq.splitAt(sq.length / 2))
+
+          Par.flatMap(parSplitted) {
+            case (left: IndexedSeq[A], right: IndexedSeq[A]) =>
+              val lR: Par[B] = loop(left)
+              val rR: Par[B] = loop(right)
+              parM.op(left = lR, right = rR)
+          }
+
+      }
+
+    loop(xa)
+
+  }
 
   lazy val wcMonoid: Monoid[WC] = ??? // TODO: remove lazy after impl
 
