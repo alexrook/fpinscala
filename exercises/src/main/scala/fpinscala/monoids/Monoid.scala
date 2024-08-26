@@ -73,8 +73,8 @@ object Monoid {
   def endoMonoid[A]: Monoid[A => A] =
     new Monoid[A => A] {
       def op(a1: A => A, a2: A => A): A => A =
-        // a1.compose(a2)
-        a1.andThen(a2)
+        a1.compose(a2)
+      // a1.andThen(a2)
 
       def zero: A => A = identity
 
@@ -111,11 +111,28 @@ object Monoid {
       m.op(acc, f(el))
     }
 
-  def foldRight[A, B](as: List[A])(z: B)(f: (A, B) => B): B =
-    ???
+  /** EXERCISE 10.6 Hard:
+    *
+    * The foldMap function can be implemented using either foldLeft or fold-
+    * Right. But you can also write foldLeft and foldRight using foldMap! Try
+    * it.
+    */
 
-  def foldLeft[A, B](as: List[A])(z: B)(f: (B, A) => B): B =
-    ???
+  def foldRight[A, B](as: List[A])(z: B)(f: (A, B) => B): B = {
+    val f1: A => (B => B) = f.curried
+    val f2: B => B = foldMap(as, endoMonoid[B])(
+      f1
+    )
+    f2(z)
+  }
+
+  def foldLeft[A, B](as: List[A])(z: B)(f: (B, A) => B): B = {
+    val f1: A => (B => B) = a => b => f(b, a)
+    val f2: B => B = foldMap(as, endoMonoid[B])(
+      f1
+    )
+    f2(z)
+  }
 
   def foldMapV[A, B](as: IndexedSeq[A], m: Monoid[B])(f: A => B): B =
     ???
