@@ -229,8 +229,29 @@ object Monoid {
 
   def count(s: String): Int = ???
 
-  def productMonoid[A, B](A: Monoid[A], B: Monoid[B]): Monoid[(A, B)] =
-    ???
+  /** EXERCISE 10.16
+    *
+    * The Monoid abstraction in itself is not all that compelling, and with the
+    * generalized foldMap it’s only slightly more interesting. The real power of
+    * monoids comes from the fact that they compose. This means, for example,
+    * that if types A and B are monoids, then the tuple type (A, B) is also a
+    * monoid (called their product).
+    *
+    * Prove it. Notice that your implementation of op is obviously associative
+    * so long as A.op and B.op are both associative.
+    */
+
+  def productMonoid[A, B](ma: Monoid[A], mb: Monoid[B]): Monoid[(A, B)] =
+    new Monoid[(A, B)] {
+      def op(left: (A, B), right: (A, B)): (A, B) = {
+        val (leftA, leftB) = left
+        val (rightA, rightB) = right
+        ma.op(leftA, rightA) -> mb.op(leftB, rightB)
+      }
+
+      def zero: (A, B) = ma.zero -> mb.zero
+
+    }
 
   def functionMonoid[A, B](B: Monoid[B]): Monoid[A => B] =
     ???
