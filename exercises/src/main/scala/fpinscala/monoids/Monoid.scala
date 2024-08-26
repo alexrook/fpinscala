@@ -6,7 +6,7 @@ import language.higherKinds
 import fpinscala.iomonad.IO3.Console.printLn
 
 trait Monoid[A] {
-  def op(a1: A, a2: A): A
+  def op(left: A, right: A): A
   def zero: A
 }
 
@@ -134,8 +134,24 @@ object Monoid {
     f2(z)
   }
 
+  /** EXERCISE 10.7
+    *
+    * Implement a foldMap for IndexedSeq. Your implementation should use the
+    * strategy of splitting the sequence in two, recursively processing each
+    * half, and then adding the answers together with the monoid.
+    */
   def foldMapV[A, B](as: IndexedSeq[A], m: Monoid[B])(f: A => B): B =
-    ???
+    as match {
+      case sq if sq.length > 2 =>
+        val (left, right) = as.splitAt(sq.length / 2)
+        val lR = foldMapV(left, m)(f)
+        val rR = foldMapV(right, m)(f)
+        m.op(left = lR, right = rR)
+
+      case fist +: last +: Nil => m.op(f(fist), f(last))
+      case fist +: Nil         => f(fist)
+      case Nil                 => m.zero
+    }
 
   def ordered(ints: IndexedSeq[Int]): Boolean =
     ???
