@@ -73,8 +73,8 @@ object Monoid {
   def endoMonoid[A]: Monoid[A => A] =
     new Monoid[A => A] {
       def op(a1: A => A, a2: A => A): A => A =
-        a1.compose(a2)
-      //  a1.andThen(a2)
+        // a1.compose(a2)
+        a1.andThen(a2)
 
       def zero: A => A = identity
 
@@ -89,15 +89,27 @@ object Monoid {
 
   import fpinscala.testing._
   import Prop_v1._
-  def monoidLaws[A](m: Monoid[A], gen: Gen[A]): Prop = ???
+
+  /** EXERCISE 10.4
+    *
+    * Use the property-based testing framework we developed in part 2 to
+    * implement a property for the monoid laws. Use your property to test the
+    * monoids we’ve written.
+    */
+  def monoidLaws[A](m: Monoid[A], gen: Gen[A]): Prop = ??? // TODO
 
   def trimMonoid(s: String): Monoid[String] = ???
 
-  def concatenate[A](as: List[A], m: Monoid[A]): A =
-    ???
+  def concatenate[A](as: List[A], m: Monoid[A]): A = as.fold(m.zero)(m.op)
 
+  /** EXERCISE 10.5
+    *
+    * Implement foldMap.
+    */
   def foldMap[A, B](as: List[A], m: Monoid[B])(f: A => B): B =
-    ???
+    as.foldLeft(m.zero) { case (acc, el) =>
+      m.op(acc, f(el))
+    }
 
   def foldRight[A, B](as: List[A])(z: B)(f: (A, B) => B): B =
     ???
@@ -273,7 +285,7 @@ object MonoidTest extends App { // TODO: replace with testing via Prop
   def testEndoMonoid(): Unit = {
     val f1: Int => Int = _ + 1
     val f2: Int => Int = _ - 4
-    val f3: Int => Int = _ * 45
+    val f3: Int => Int = _ - 45
 
     def compare(v: Int): (Int => Int, Int => Int) => Boolean =
       (f1, f2) => f1(v) == f2(v)
