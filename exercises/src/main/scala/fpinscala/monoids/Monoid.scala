@@ -257,10 +257,23 @@ trait Foldable[F[_]] {
   def concatenate[A](as: F[A])(m: Monoid[A]): A =
     foldMap(as)(identity)(m)
 
+  /** EXERCISE 10.15
+    *
+    * Any Foldable structure can be turned into a List. Write this conversion in
+    * a generic way:
+    */
   def toList[A](as: F[A]): List[A] =
     foldLeft(as)(List.empty[A]) { case (acc, a) =>
       a +: acc
     }.reverse
+
+  def toList_V2[A](as: F[A]): List[A] =
+    toF[List, A](as)(listMonoid)(a => List(a))
+
+  def toF[FF[_], A](as: F[A])(m: Monoid[FF[A]])(f: A => FF[A]): FF[A] =
+    foldLeft(as)(m.zero) { case (acc, el) =>
+      m.op(acc, f(el))
+    }
 
 }
 
