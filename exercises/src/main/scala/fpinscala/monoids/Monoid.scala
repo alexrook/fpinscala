@@ -349,13 +349,17 @@ object TreeFoldable extends Foldable[Tree] {
   }
 }
 
+/** EXERCISE 10.14
+  *
+  * Write a Foldable[Option] instance.
+  */
 object OptionFoldable extends Foldable[Option] {
   override def foldMap[A, B](as: Option[A])(f: A => B)(mb: Monoid[B]): B =
-    ???
+    as.fold(mb.zero)(f)
   override def foldLeft[A, B](as: Option[A])(z: B)(f: (B, A) => B) =
-    ???
+    as.foldLeft(z)(f)
   override def foldRight[A, B](as: Option[A])(z: B)(f: (A, B) => B) =
-    ???
+    as.foldRight(z)(f)
 }
 
 object MonoidTest extends App { // TODO: replace with testing via Prop
