@@ -2,5 +2,5 @@
 # Add key=value pairs of SDKs to use below
 java=17.0.12-tem
 scala=2.13.14
-sbt=1.10.0
+sbt=1.10.1
 
