@@ -39,12 +39,32 @@ trait Monad[M[_]] extends Functor[M] {
 
   def map[A, B](ma: M[A])(f: A => B): M[B] =
     flatMap(ma)(a => unit(f(a)))
+
   def map2[A, B, C](ma: M[A], mb: M[B])(f: (A, B) => C): M[C] =
     flatMap(ma)(a => map(mb)(b => f(a, b)))
 
-  def sequence[A](lma: List[M[A]]): M[List[A]] = ???
+  /** EXERCISE 11.3
+    *
+    * The sequence and traverse combinators should be pretty familiar to you by
+    * now, and your implementations of them from various prior chapters are
+    * probably all very similar. Implement them once and for all on Monad[F].
+    */
+  @annotation.nowarn // unchecked suppressed for for educational purposes
+  def sequence[A](lma: List[M[A]]): M[List[A]] =
+    lma.foldLeft(unit(List.empty[A])) { case (acc: M[List[A]], m: M[A]) =>
+      flatMap(acc) { list: List[A] =>
+        map(m)(a => list :+ a)
+      }
+    }
 
-  def traverse[A, B](la: List[A])(f: A => M[B]): M[List[B]] = ???
+  @annotation.nowarn
+  def traverse[A, B](la: List[A])(f: A => M[B]): M[List[B]] =
+    la.foldLeft(unit(List.empty[B])) { case (acc: M[List[B]], a: A) =>
+      flatMap(acc) { list: List[B] =>
+        val mb: M[B] = f(a)
+        map(mb)(b => list :+ b)
+      }
+    }
 
   def replicateM[A](n: Int, ma: M[A]): M[List[A]] = ???
 
