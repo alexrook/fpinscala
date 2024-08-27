@@ -66,7 +66,22 @@ trait Monad[M[_]] extends Functor[M] {
       }
     }
 
-  def replicateM[A](n: Int, ma: M[A]): M[List[A]] = ???
+  /** EXERCISE 11.4
+    *
+    * One combinator we saw for Gen and Parser was listOfN, which allowed us to
+    * repli- cate a parser or generator n times to get a parser or generator of
+    * lists of that length.
+    *
+    * We can implement this combinator for all monads F by adding it to our
+    * Monad trait. We should also give it a more generic name such as replicateM
+    * (meaning “replicate in a monad”).
+    *
+    * Implement replicateM.
+    */
+  def replicateM[A](n: Int, ma: M[A]): M[List[A]] =
+    map(ma) { a =>
+      List.fill(n)(a)
+    }
 
   def compose[A, B, C](f: A => M[B], g: B => M[C]): A => M[C] = ???
 
