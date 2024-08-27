@@ -187,6 +187,36 @@ object Monad {
         st flatMap f
     }
 
+  /** EXERCISE 11.5
+    *
+    * Think about how replicateM will behave for various choices of F. For
+    * example, how does it behave in the List monad? What about Option? Describe
+    * in your own words the general meaning of replicateM.
+    */
+
+  lazy val example_115: Unit = {
+    import scala.concurrent.Future
+
+    implicit val ec = scala.concurrent.ExecutionContext.global
+
+    val futureM: Monad[Future] =
+      new Monad[Future] {
+        def flatMap[A, B](ma: Future[A])(f: A => Future[B]): Future[B] =
+          ma.flatMap(f)
+        def unit[A](a: => A): Future[A] = Future(a)
+      }
+
+    // Если у нас есть к примеру Monad[Future] то replicaM(12,Future(42))
+    // вернет список повторяющихся чисел 42 обернутый в Future
+    val ret1: Future[List[Int]] = futureM.replicateM(12, Future(42))
+    // Если у нас есть  Monad[Option] то replicaM(12,Option(42))
+    // вернет список повторяющихся чисел 42 внутри Option
+    val ret2: Option[List[Int]] = optionMonad.replicateM(12, Option(42))
+    // Если у нас есть  Monad[List] то replicaM(12,List(1,2,3))
+    // вернет список повторяющихся списков
+    val ret3: List[List[Int]] = listMonad.replicateM(12, List(1, 2, 3))
+  }
+
   val idMonad: Monad[Id] = ???
 
   def readerMonad[R] = ???
