@@ -25,6 +25,7 @@ trait Functor[F[_]] {
     case Left(fa)  => map(fa)(Left(_))
     case Right(fb) => map(fb)(Right(_))
   }
+
 }
 
 object Functor {
@@ -83,7 +84,39 @@ trait Monad[M[_]] extends Functor[M] {
       List.fill(n)(a)
     }
 
-  def compose[A, B, C](f: A => M[B], g: B => M[C]): A => M[C] = ???
+  /** EXERCISE 11.6 Hard:
+    *
+    * Here’s an example of a function we haven’t seen before. Implement the
+    * function filterM. It’s a bit like filter, except that instead of a
+    * function from A => Boolean, we have an A => F[Boolean]. (Replacing various
+    * ordinary functions like this with the monadic equivalent often yields
+    * interesting results.) Implement this function, and then think about what
+    * it means for various data types.
+    */
+  @annotation.nowarn // unchecked suppressed for for educational purposes
+  def filterM[A](ms: List[A])(f: A => M[Boolean]): M[List[A]] =
+    ms.foldLeft(unit(List.empty[A])) {
+      //
+      case (ml: M[List[A]], a: A) =>
+        val mb: M[Boolean] = f(a)
+        flatMap(ml) { accList: List[A] =>
+          map(mb) {
+            case true  => accList :+ a
+            case false => accList
+          }
+        }
+    }
+
+  def filterM_Book[A](ms: List[A])(f: A => M[Boolean]): M[List[A]] =
+    ms.foldRight(unit(List[A]()))((x, y) =>
+      compose(f, (b: Boolean) => if (b) map2(unit(x), y)(_ :: _) else y)(x)
+    )
+
+  def compose[A, B, C](f: A => M[B], g: B => M[C]): A => M[C] =
+    a =>
+      flatMap(f(a)) { b =>
+        g(b)
+      }
 
   // Implement in terms of `compose`:
   def _flatMap[A, B](ma: M[A])(f: A => M[B]): M[B] = ???
@@ -187,37 +220,11 @@ object Monad {
         st flatMap f
     }
 
-  /** EXERCISE 11.5
-    *
-    * Think about how replicateM will behave for various choices of F. For
-    * example, how does it behave in the List monad? What about Option? Describe
-    * in your own words the general meaning of replicateM.
-    */
-
-  lazy val example_115: Unit = {
-    import scala.concurrent.Future
-
-    implicit val ec = scala.concurrent.ExecutionContext.global
-
-    val futureM: Monad[Future] =
-      new Monad[Future] {
-        def flatMap[A, B](ma: Future[A])(f: A => Future[B]): Future[B] =
-          ma.flatMap(f)
-        def unit[A](a: => A): Future[A] = Future(a)
-      }
-
-    // Если у нас есть к примеру Monad[Future] то replicaM(12,Future(42))
-    // вернет список повторяющихся чисел 42 обернутый в Future
-    val ret1: Future[List[Int]] = futureM.replicateM(12, Future(42))
-    // Если у нас есть  Monad[Option] то replicaM(12,Option(42))
-    // вернет список повторяющихся чисел 42 внутри Option
-    val ret2: Option[List[Int]] = optionMonad.replicateM(12, Option(42))
-    // Если у нас есть  Monad[List] то replicaM(12,List(1,2,3))
-    // вернет список повторяющихся списков
-    val ret3: List[List[Int]] = listMonad.replicateM(12, List(1, 2, 3))
-  }
-
-  val idMonad: Monad[Id] = ???
+  val idMonad: Monad[Id] =
+    new Monad[Id] {
+      def flatMap[A, B](ma: Id[A])(f: A => Id[B]): Id[B] = ma.flatMap(f)
+      def unit[A](a: => A): Id[A] = Id(a)
+    }
 
   def readerMonad[R] = ???
 }
@@ -234,4 +241,105 @@ object Reader {
         f: A => Reader[R, B]
     ): Reader[R, B] = ???
   }
+}
+
+object examples_monadic extends App {
+  import scala.concurrent._
+  import scala.concurrent.duration._
+
+  implicit val ec: scala.concurrent.ExecutionContextExecutor =
+    scala.concurrent.ExecutionContext.global
+
+  /** EXERCISE 11.5
+    *
+    * Think about how replicateM will behave for various choices of F. For
+    * example, how does it behave in the List monad? What about Option? Describe
+    * in your own words the general meaning of replicateM.
+    */
+
+  def futureMonad = {
+    val futureM: Monad[Future] =
+      new Monad[Future] {
+        def flatMap[A, B](ma: Future[A])(f: A => Future[B]): Future[B] =
+          ma.flatMap(f)
+        def unit[A](a: => A): Future[A] = Future(a)
+      }
+
+    futureM
+  }
+  lazy val example_115: Unit = {
+
+    val futureM = futureMonad
+    // Если у нас есть к примеру Monad[Future] то replicaM(12,Future(42))
+    // вернет список повторяющихся чисел 42 обернутый в Future
+    val ret1: Future[List[Int]] = futureM.replicateM(12, Future(42))
+    // Если у нас есть  Monad[Option] то replicaM(12,Option(42))
+    // вернет список повторяющихся чисел 42 внутри Option
+    val ret2: Option[List[Int]] = Monad.optionMonad.replicateM(12, Option(42))
+    // Если у нас есть  Monad[List] то replicaM(12,List(1,2,3))
+    // вернет список повторяющихся списков
+    val ret3: List[List[Int]] = Monad.listMonad.replicateM(12, List(1, 2, 3))
+  }
+
+  lazy val example_116 = { // TODO: thin about resutlts
+
+    val ret1: Option[List[Int]] =
+      Monad.optionMonad.filterM(List(1, 2, 3))(x =>
+        if (x > 1) Some(true) else None
+      )
+    val ret1_B: Option[List[Int]] =
+      Monad.optionMonad.filterM_Book(List(1, 2, 3))(x =>
+        if (x > 1) Some(true) else None
+      )
+    println(ret1)
+    println(ret1_B)
+
+    val ret2: List[List[Int]] =
+      Monad.listMonad.filterM(List(1, 2, 3))((x: Int) =>
+        if (x > 1) List(true, false) else List(false)
+      )
+    val ret2_Book: List[List[Int]] =
+      Monad.listMonad.filterM_Book(List(1, 2, 3))((x: Int) =>
+        if (x > 1) List(true, false) else List(false)
+      )
+    println(ret2)
+    println(ret2_Book)
+
+    val ret3: Future[List[Int]] =
+      futureMonad.filterM(List(1, 2, 3))(a =>
+        Future {
+          if (a > 1) {
+            true
+          } else {
+            false
+          }
+        }
+      )
+
+    val ret3_Book: Future[List[Int]] =
+      futureMonad.filterM_Book(List(1, 2, 3))(a =>
+        Future {
+          if (a > 1) {
+            true
+          } else {
+            false
+          }
+        }
+      )
+
+    val ret33: Future[Unit] =
+      for {
+        f1 <- ret3
+        f2 <- ret3_Book
+      } yield {
+        println(f1)
+        println(f2)
+      }
+
+    Await.ready(ret33, 1.second)
+
+  }
+
+  example_116
+
 }
