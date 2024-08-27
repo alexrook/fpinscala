@@ -274,8 +274,24 @@ object Monoid {
         }
     }
 
+  /** EXERCISE 10.18
+    *
+    * A bag is like a set, except that it’s represented by a map that contains
+    * one entry per element with that element as the key, and the value under
+    * that key is the number of times the element appears in the bag. For
+    * example:
+    * {{{
+    * scala> bag(Vector("a", "rose", "is", "a", "rose"))
+    * res0: Map[String,Int] = Map(a -> 2, rose -> 2, is -> 1)
+    * }}}
+    *
+    * Use monoids to compute a “bag” from an IndexedSeq.
+    */
   def bag[A](as: IndexedSeq[A]): Map[A, Int] =
-    ???
+    foldMapV(as, mapMergeMonoid[A, Int](intAddition)) { a: A =>
+      Map(a -> 1)
+    }
+    
 }
 
 trait Foldable[F[_]] {
