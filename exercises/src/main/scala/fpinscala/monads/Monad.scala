@@ -4,9 +4,10 @@ package monads
 import parsing._
 import testing._
 import parallelism._
-import state._
+import fpinscala.state._
 import parallelism.Par._
 import language.higherKinds
+import java.lang
 
 trait Functor[F[_]] {
   def map[A, B](fa: F[A])(f: A => B): F[B]
@@ -98,13 +99,58 @@ object Monad {
 
     }
 
-  val listMonad: Monad[List] = 
+  val listMonad: Monad[List] =
     new Monad[List] {
       def flatMap[A, B](ma: List[A])(f: A => List[B]): List[B] = ma.flatMap(f)
       def unit[A](a: => A): List[A] = List(a)
     }
 
-  def stateMonad[S] = ???
+  /** EXERCISE 11.2 Hard:
+    *
+    * State looks like it would be a monad too, but it takes two type arguments
+    * and you need a type constructor of one argument to implement Monad. Try to
+    * implement a State monad, see what issues you run into, and think about
+    * possible solutions.
+    */
+
+  def stateMonad[S] = {
+    type S1[A] = State[S, A]
+    new Monad[S1] {
+      def flatMap[A, B](ma: S1[A])(f: A => S1[B]): S1[B] =
+        ma.flatMap(f)
+      def unit[A](a: => A): S1[A] = State.unit(a)
+    }
+  }
+
+  class StateMonads[S] {
+    type StateS[A] = State[S, A]
+
+    // We can then declare the monad for the `StateS` type constructor:
+    val monad = new Monad[StateS] {
+      def unit[A](a: => A): State[S, A] = State(s => (a, s))
+      override def flatMap[A, B](st: State[S, A])(
+          f: A => State[S, B]
+      ): State[S, B] =
+        st flatMap f
+    }
+  }
+
+  lazy val example_monad_family = {
+    val m = new StateMonads[String].monad
+    m.unit(1).flatMap(???)
+  }
+
+  // But we don't have to create a full class like `StateMonads`. We can create
+  // an anonymous class inline, inside parentheses, and project out its type member,
+  // `lambda`:
+  def stateMonad_Book[S] =
+    new Monad[({ type lambda[x] = State[S, x] })#lambda] {
+      def unit[A](a: => A): State[S, A] = State(s => (a, s))
+      override def flatMap[A, B](st: State[S, A])(
+          f: A => State[S, B]
+      ): State[S, B] =
+        st flatMap f
+    }
 
   val idMonad: Monad[Id] = ???
 
