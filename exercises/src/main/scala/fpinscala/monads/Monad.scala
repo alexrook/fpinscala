@@ -8,6 +8,7 @@ import fpinscala.state._
 import parallelism.Par._
 import language.higherKinds
 import java.lang
+import fpinscala.monads.Monad.optionMonad
 
 trait Functor[F[_]] {
   def map[A, B](fa: F[A])(f: A => B): F[B]
@@ -99,18 +100,35 @@ trait Monad[M[_]] extends Functor[M] {
       //
       case (ml: M[List[A]], a: A) =>
         val mb: M[Boolean] = f(a)
-        flatMap(ml) { accList: List[A] =>
-          map(mb) {
+        println("a:" + a)
+        println("ml:" + ml)
+        println("mb:" + mb)
+        val stepRet = flatMap(ml) { accList: List[A] =>
+          println("acc list" + accList)
+          val mapMB: M[List[A]] = map(mb) {
             case true  => accList :+ a
             case false => accList
           }
+          println("map mb:" + mapMB)
+          mapMB
         }
+
+        println("step ret:" + stepRet)
+        println("-------------")
+        stepRet
     }
 
   def filterM_Book[A](ms: List[A])(f: A => M[Boolean]): M[List[A]] =
     ms.foldRight(unit(List[A]()))((x, y) =>
       compose(f, (b: Boolean) => if (b) map2(unit(x), y)(_ :: _) else y)(x)
     )
+
+  /** EXERCISE 11.7
+    *
+    * functions like A => M[B] are called Kleisli arrows
+    *
+    * Implement the Kleisli composition function compose.
+    */
 
   def compose[A, B, C](f: A => M[B], g: B => M[C]): A => M[C] =
     a =>
@@ -281,62 +299,81 @@ object examples_monadic extends App {
     val ret3: List[List[Int]] = Monad.listMonad.replicateM(12, List(1, 2, 3))
   }
 
-  lazy val example_116 = { // TODO: thin about resutlts
+  object example_116 { // TODO: think about results
+    object OptionMonadFilterM {
+      val ret1: Option[List[Int]] =
+        Monad.optionMonad.filterM(List(1, 2, 3))(x =>
+          if (x > 1) Some(true) else None
+        )
 
-    val ret1: Option[List[Int]] =
-      Monad.optionMonad.filterM(List(1, 2, 3))(x =>
-        if (x > 1) Some(true) else None
-      )
-    val ret1_B: Option[List[Int]] =
-      Monad.optionMonad.filterM_Book(List(1, 2, 3))(x =>
-        if (x > 1) Some(true) else None
-      )
-    println(ret1)
-    println(ret1_B)
+      // step 1
+      // a =1 , ml = Option(List.empty)
+      // mb = None, bcs (! 1  > 1)
+      // return None
+      // step 2
+      // a =2 , ml = None
+      // mb = Some(true), bcs (2 > 1)
+      // return None
+      // step 3
+      // a = 3 , ml = None
+      // mb = Some(true), bcs (3 > 1)
+      // return None
+      // RET = None
+
+      val ret1_B: Option[List[Int]] =
+        Monad.optionMonad.filterM_Book(List(1, 2, 3))(x =>
+          if (x > 1) Some(true) else None
+        )
+      println("Option monad:" + ret1)
+      println("Option monad (book version):" + ret1_B)
+    }
+
+    // OptionMonadFilterM
 
     val ret2: List[List[Int]] =
       Monad.listMonad.filterM(List(1, 2, 3))((x: Int) =>
         if (x > 1) List(true, false) else List(false)
       )
+
     val ret2_Book: List[List[Int]] =
       Monad.listMonad.filterM_Book(List(1, 2, 3))((x: Int) =>
         if (x > 1) List(true, false) else List(false)
       )
-    println(ret2)
-    println(ret2_Book)
+    println("List monad:" + ret2)
+    println("List monad (book version):" + ret2_Book)
 
-    val ret3: Future[List[Int]] =
-      futureMonad.filterM(List(1, 2, 3))(a =>
-        Future {
-          if (a > 1) {
-            true
-          } else {
-            false
-          }
-        }
-      )
+    // val ret3: Future[List[Int]] =
+    //   futureMonad.filterM(List(1, 2, 3))(a =>
+    //     Future {
+    //       if (a > 1) {
+    //         true
+    //       } else {
+    //         false
+    //       }
+    //     }
+    //   )
 
-    val ret3_Book: Future[List[Int]] =
-      futureMonad.filterM_Book(List(1, 2, 3))(a =>
-        Future {
-          if (a > 1) {
-            true
-          } else {
-            false
-          }
-        }
-      )
+    // val ret3_Book: Future[List[Int]] =
+    //   futureMonad.filterM_Book(List(1, 2, 3))(a =>
+    //     Future {
+    //       if (a > 1) {
+    //         true
+    //       } else {
+    //         false
+    //       }
+    //     }
+    //   )
 
-    val ret33: Future[Unit] =
-      for {
-        f1 <- ret3
-        f2 <- ret3_Book
-      } yield {
-        println(f1)
-        println(f2)
-      }
+    // val ret33: Future[Unit] =
+    //   for {
+    //     f1 <- ret3
+    //     f2 <- ret3_Book
+    //   } yield {
+    //     println(f1)
+    //     println(f2)
+    //   }
 
-    Await.ready(ret33, 1.second)
+    // Await.ready(ret33, 1.second)
 
   }
 
