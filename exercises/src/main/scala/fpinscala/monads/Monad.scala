@@ -158,8 +158,18 @@ trait Monad[M[_]] extends Functor[M] {
     )(null.asInstanceOf[A])
 
   // sic!
-  def flatMap_via_compose_book_version[A, B](ma: F[A])(f: A => F[B]): F[B] =
+  def flatMap_via_compose_book_version[A, B](ma: M[A])(f: A => M[B]): M[B] =
     compose[Unit, A, B]((_: Unit) => ma, f)(())
+
+  /** EXERCISE 11.9
+    *
+    * Show that the two formulations of the associative law, the one in terms of
+    * flatMap and the one in terms of compose, are equivalent.
+    */
+  // x inner == a
+  // x.flatMap(f).flatMap(g) == compose(compose( _ => x, f), g))
+  // f(a).flatMap(g) = compose(f(a)), g))
+  // g(f(a)) = g(f(a))
 
   def join[A](mma: M[M[A]]): M[A] = ???
 
