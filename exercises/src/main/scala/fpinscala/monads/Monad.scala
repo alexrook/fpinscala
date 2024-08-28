@@ -9,6 +9,7 @@ import parallelism.Par._
 import language.higherKinds
 import java.lang
 import fpinscala.monads.Monad.optionMonad
+import fpinscala.iomonad.IO2aTests.f
 
 trait Functor[F[_]] {
   def map[A, B](fa: F[A])(f: A => B): F[B]
@@ -37,6 +38,12 @@ object Functor {
 
 trait Monad[M[_]] extends Functor[M] {
   def unit[A](a: => A): M[A]
+
+  /** assuming that flatMap obeys an associative law:
+    * {{{
+    *   x.flatMap(f).flatMap(g) == x.flatMap(a => f(a).flatMap(g))
+    * }}}
+    */
   def flatMap[A, B](ma: M[A])(f: A => M[B]): M[B]
 
   def map[A, B](ma: M[A])(f: A => B): M[B] =
@@ -128,6 +135,8 @@ trait Monad[M[_]] extends Functor[M] {
     * functions like A => M[B] are called Kleisli arrows
     *
     * Implement the Kleisli composition function compose.
+    *
+    * compose(compose(f, g), h) == compose(f, compose(g, h))
     */
 
   def compose[A, B, C](f: A => M[B], g: B => M[C]): A => M[C] =
@@ -136,8 +145,21 @@ trait Monad[M[_]] extends Functor[M] {
         g(b)
       }
 
-  // Implement in terms of `compose`:
-  def _flatMap[A, B](ma: M[A])(f: A => M[B]): M[B] = ???
+  /** EXERCISE 11.8 Hard:
+    *
+    * Implement flatMap in terms of compose. It seems that we’ve found another
+    * minimal set of monad combinators: compose and unit.
+    */
+  // A` == A == B, B` == C
+  def flatMap_via_compose[A, B](ma: M[A])(f: A => M[B]): M[B] =
+    compose[A, A, B](
+      f = _ => ma,
+      g = f
+    )(null.asInstanceOf[A])
+
+  // sic!
+  def flatMap_via_compose_book_version[A, B](ma: F[A])(f: A => F[B]): F[B] =
+    compose[Unit, A, B]((_: Unit) => ma, f)(())
 
   def join[A](mma: M[M[A]]): M[A] = ???
 
