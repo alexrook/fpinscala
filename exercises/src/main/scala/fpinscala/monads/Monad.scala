@@ -330,9 +330,14 @@ object Monad {
   def readerMonad[R] = ???
 }
 
+/** EXERCISE 11.17
+  *
+  * Implement map and flatMap as methods on this class, and give an
+  * implementation for Monad[Id].
+  */
 case class Id[A](value: A) {
-  def map[B](f: A => B): Id[B] = ???
-  def flatMap[B](f: A => Id[B]): Id[B] = ???
+  def map[B](f: A => B): Id[B] = Id(f(value))
+  def flatMap[B](f: A => Id[B]): Id[B] = f(value)
 }
 
 object Reader {
@@ -425,41 +430,60 @@ object examples_monadic extends App {
     println("List monad:" + ret2)
     println("List monad (book version):" + ret2_Book)
 
-    // val ret3: Future[List[Int]] =
-    //   futureMonad.filterM(List(1, 2, 3))(a =>
-    //     Future {
-    //       if (a > 1) {
-    //         true
-    //       } else {
-    //         false
-    //       }
-    //     }
-    //   )
+    val ret3: Future[List[Int]] =
+      futureMonad.filterM(List(1, 2, 3))(a =>
+        Future {
+          if (a > 1) {
+            true
+          } else {
+            false
+          }
+        }
+      )
 
-    // val ret3_Book: Future[List[Int]] =
-    //   futureMonad.filterM_Book(List(1, 2, 3))(a =>
-    //     Future {
-    //       if (a > 1) {
-    //         true
-    //       } else {
-    //         false
-    //       }
-    //     }
-    //   )
+    val ret3_Book: Future[List[Int]] =
+      futureMonad.filterM_Book(List(1, 2, 3))(a =>
+        Future {
+          if (a > 1) {
+            true
+          } else {
+            false
+          }
+        }
+      )
 
-    // val ret33: Future[Unit] =
-    //   for {
-    //     f1 <- ret3
-    //     f2 <- ret3_Book
-    //   } yield {
-    //     println(f1)
-    //     println(f2)
-    //   }
+    val ret33: Future[Unit] =
+      for {
+        f1 <- ret3
+        f2 <- ret3_Book
+      } yield {
+        println(f1)
+        println(f2)
+      }
 
-    // Await.ready(ret33, 1.second)
+    Await.ready(ret33, 1.second)
 
   }
 
-  example_116
+//  example_116
+
+  object example_1114 {
+
+    /** EXERCISE 11.14
+      *
+      * Restate the monad laws to mention only join, map, and unit.
+      *
+      * EXERCISE 11.15
+      *
+      * Write down an explanation, in your own words, of what the associative
+      * law means for Par and Parser.
+      *
+      * EXERCISE 11.16
+      *
+      * Explain in your own words what the identity laws are stating in concrete
+      * terms for Gen and List.
+      */
+    ??? // TODO:impl
+  }
 
 }
