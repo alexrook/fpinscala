@@ -207,8 +207,25 @@ trait Monad[M[_]] extends Functor[M] {
     */
   def join[A](mma: M[M[A]]): M[A] = flatMap(mma)(identity)
 
-  // Implement in terms of `join`:
-  def __flatMap[A, B](ma: M[A])(f: A => M[B]): M[B] = ???
+  /** EXERCISE 11.13
+    *
+    * Implement either flatMap or compose in terms of join and map.
+    */
+  def flatMap_via_join[A, B](ma: M[A])(f: A => M[B]): M[B] =
+    join {
+      val mmb: M[M[B]] = map(ma)(f) // be verbose for educational purposes
+      mmb
+    }
+
+  def compose_via_join[A, B, C](f: A => M[B], g: B => M[C]): A => M[C] =
+    (a: A) =>
+      join {
+        val halfRet: M[M[C]] = map(f(a)) { b: B =>
+          g(b)
+        }
+        halfRet
+      }
+
 }
 
 case class Reader[R, A](run: R => A)
