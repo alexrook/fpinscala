@@ -37,8 +37,37 @@ object Functor {
 }
 
 trait Monad[M[_]] extends Functor[M] {
+
+  /** The identity law:
+    * {{{
+    *    compose(f, unit) == f
+    *    compose(unit, f) == f
+    *    flatMap(x)(unit) == x
+    *    flatMap(unit(y))(f) == f(y)
+    * }}}
+    */
   def unit[A](a: => A): M[A]
 
+  /** EXERCISE 11.10 //TODO: impl
+    *
+    * Prove that these two statements of the identity laws are equivalent.
+    */
+
+  /** EXERCISE 11.11
+    *
+    * Prove that the identity laws hold for a monad of your choice.
+    */
+  // f = x => Some(x+1)
+  // compose(f,Some.apply) == f
+  // x => x + 1 => Some.apply = x => Some(x+1)
+  // x => Some(x+1) ==  x => Some(x+1)
+  //
+  // compose(unit, f) == f
+  // compose(Some.apply,x => Some(x+1)) == x => Some(x+1)
+  // x => Some.apply => Some(x+1) == x => Some(x+1)
+  // x => Some(x+1) == x => Some(x+1)
+
+  //
   /** assuming that flatMap obeys an associative law:
     * {{{
     *   x.flatMap(f).flatMap(g) == x.flatMap(a => f(a).flatMap(g))
@@ -167,8 +196,8 @@ trait Monad[M[_]] extends Functor[M] {
     * flatMap and the one in terms of compose, are equivalent.
     */
   // x inner == a
-  // x.flatMap(f).flatMap(g) == compose(compose( _ => x, f), g))
-  // f(a).flatMap(g) = compose(f(a)), g))
+  // x.flatMap(f).flatMap(g) == compose(compose( _ => x, f), g))(unit)
+  // f(a).flatMap(g) = compose(f(a)), g))(unit)
   // g(f(a)) = g(f(a))
 
   def join[A](mma: M[M[A]]): M[A] = ???
