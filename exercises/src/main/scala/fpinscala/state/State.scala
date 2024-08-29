@@ -4,6 +4,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.ListBuffer
 import fpinscala.state
 import scala.annotation.tailrec
+import java.util.concurrent.Flow
 
 trait RNG {
   def nextInt: (Int, RNG) // Should generate a random `Int`. We'll later define other functions in terms of `nextInt`.
@@ -254,6 +255,15 @@ object RNG {
 
 case class State[S, +A](run: S => (A, S)) {
 
+  case class FlowState[AA >: A](a: AA, state: S) {
+    def flow: FlowState[AA] = {
+      // println(s"FlowState[a:$a,state:$state] before run ")
+      val (aa, next) = run(state)
+      // println(s"FlowState[aa:$aa,next:$next] after run ")
+      FlowState(aa, next)
+    }
+  }
+
   import State._
 
   /** EXERCISE 6.10
@@ -265,6 +275,11 @@ case class State[S, +A](run: S => (A, S)) {
 
   def map[B](f: A => B): State[S, B] = flatMap { a =>
     unit[S, B](f(a))
+  }
+
+  def flow[AA >: A](s: S): FlowState[AA] = {
+    val (a, next) = run(s)
+    FlowState[AA](a, next)
   }
 
   def mapAlt[B](f: A => B): State[S, B] =
@@ -281,9 +296,10 @@ case class State[S, +A](run: S => (A, S)) {
       }
     }
 
+  @annotation.nowarn // disabled for educaion purpose
   def flatMap[B](f: A => State[S, B]): State[S, B] =
     State[S, B](
-      run.andThen { case ((a, nextState)) =>
+      run.andThen { case ((a: A, nextState: S)) =>
         f(a).run(nextState)
       }
     )
@@ -432,5 +448,14 @@ object State {
         case (Turn, Machine(false, candy, coin)) =>
           Machine(true, candy - 1, coin)
       }
+
+}
+
+object example_flow_state extends App {
+
+  val state: State[Long, String] = State((l: Long) => (l.toString, l + 1))
+
+  val fs: state.FlowState[String] = state.flow(0L).flow.flow.flow
+  println(fs)
 
 }

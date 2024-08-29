@@ -313,7 +313,13 @@ object Monad {
   // an anonymous class inline, inside parentheses, and project out its type member,
   // `lambda`:
   def stateMonad_Book[S] =
-    new Monad[({ type lambda[x] = State[S, x] })#lambda] {
+    new Monad[
+      ({
+        type SH[A] =
+          State[S, A] // тип SH образует тип с дыркой M[_], по параметру A
+        // при этом S для state заполняется S из функции stateMonad_Book
+      })#SH
+    ] {
       def unit[A](a: => A): State[S, A] = State(s => (a, s))
       override def flatMap[A, B](st: State[S, A])(
           f: A => State[S, B]
@@ -485,5 +491,95 @@ object examples_monadic extends App {
       */
     ??? // TODO:impl
   }
+
+  object example_path_depended_types {
+
+    class Outer {
+      class Inner {}
+    }
+
+    val o1: Outer = new Outer()
+    val o2: Outer = new Outer()
+
+    val i1: o1.Inner = new o1.Inner
+    val i2: o2.Inner = new o2.Inner
+
+    type A = Outer#Inner
+
+    // all inner classes are subclasses of Outer#Inner
+    var i3: A = new o1.Inner
+    i3 = new o2.Inner
+
+    println("All ok")
+
+  }
+
+  // example_path_depended_types
+
+  object stateMonad_examples {
+
+    import Monad.stateMonad_Book
+
+    /** EXERCISE 11.18
+      *
+      * Now that we have a State monad, you should try it out to see how it
+      * behaves. What is the meaning of replicateM in the State monad? How does
+      * map2 behave? What about sequence?
+      */
+
+    // replicaM
+    val unitState: State[Int, String] = stateMonad_Book[Int].unit("AAA")
+
+    def family = stateMonad_Book[Long]
+
+    val stringM: State[Long, String] = family.unit("42")
+
+    val r1: State[Long, List[String]] = family.replicateM(3, family.unit("42"))
+    println("R1:" + r1.flow(0L).flow.flow)
+
+    val r2: State[Long, List[String]] = family.replicateM(
+      3,
+      State { s: Long =>
+        (s.toString() + "str", s + 1)
+      }
+    )
+    println(
+      "R2:" + r2.flow(0L).flow.flow
+    ) // FlowState(List(2str, 2str, 2str),3)
+
+    // map2
+    val state3: State[Long, String] =
+      State { s: Long =>
+        (s.toString() + "str", s + 1)
+      }
+
+    val state4: State[Long, Char] =
+      State { s: Long =>
+        (s.toByte.toChar, s + 10)
+      }
+
+    val ret3: State[Long, String] = stateMonad_Book[Long].map2(state3, state4) {
+      (str: String, char: Char) =>
+        s"$str, char[$char]"
+    } // state течет от state3 к state4 изменяясь по пути в run для этих states
+
+    println("Ret3:" + ret3.run(105L)) // Ret3:(105str, char[j],116)
+    println(
+      "Ret3:" + ret3.flow(105L).flow
+    ) // Ret3:FlowState(116str, char[u],127)
+
+    // sequence
+    val ret4: State[Long, List[String]] =
+      stateMonad_Book[Long]
+        .sequence(
+          List(stringM, state3)
+        ) // стэйт применяется ко всем стэйтам sequence и их результаты помещаются в список
+
+    println("Ret4:" + ret4.run(100))
+    println("Ret4:" + ret4.flow(100).flow.flow)
+
+  }
+
+  stateMonad_examples
 
 }
