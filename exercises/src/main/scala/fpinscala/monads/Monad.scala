@@ -10,6 +10,7 @@ import language.higherKinds
 import java.lang
 import fpinscala.monads.Monad.optionMonad
 import fpinscala.iomonad.IO2aTests.f
+import fpinscala.monads.Monad.readerMonad_Book
 
 trait Functor[F[_]] {
   def map[A, B](fa: F[A])(f: A => B): F[B]
@@ -231,6 +232,49 @@ trait Monad[M[_]] extends Functor[M] {
 case class Reader[R, A](run: R => A)
 
 object Monad {
+
+  /** EXERCISE 11.20 Hard:
+    *
+    * To cement your understanding of monads, give a monad instance for the
+    * follow- ing type, and explain what it means. What are its primitive
+    * operations? What is the action of flatMap? What meaning does it give to
+    * monadic functions like sequence, join, and replicateM? What meaning does
+    * it give to the monad laws?11
+    */
+
+  def readerMonad[R] = new Monad[
+    ({
+      type RR[x] = Reader[R, x]
+    })#RR
+  ] {
+
+    def unit[A](a: => A): Reader[R, A] = Reader(_ => a)
+
+    // flatMap означает что мы получаем ридер, который читает R
+    // получает A, затем применяет f(a),
+    // чтобы получить ридер, который читает R,
+    // чтобы получить B
+    override def flatMap[A, B](st: Reader[R, A])(
+        f: A => Reader[R, B]
+    ): Reader[R, B] =
+      Reader[R, B] { r =>
+        // f(st.run(r)).run(r) - short version
+        val a: A = st.run(r)
+        val readerB: Reader[R, B] = f(a)
+        val ret: B = readerB.run(r)
+        ret
+      }
+
+  }
+
+  def readerMonad_Book[R] = new Monad[({ type RR[x] = Reader[R, x] })#RR] {
+    def unit[A](a: => A): Reader[R, A] = Reader(_ => a)
+    override def flatMap[A, B](st: Reader[R, A])(
+        f: A => Reader[R, B]
+    ): Reader[R, B] =
+      Reader(r => f(st.run(r)).run(r))
+  }
+
   val genMonad = new Monad[Gen] {
     def unit[A](a: => A): Gen[A] = Gen.unit(a)
     override def flatMap[A, B](ma: Gen[A])(f: A => Gen[B]): Gen[B] =
@@ -333,7 +377,6 @@ object Monad {
       def unit[A](a: => A): Id[A] = Id(a)
     }
 
-  def readerMonad[R] = ???
 }
 
 /** EXERCISE 11.17
@@ -344,15 +387,6 @@ object Monad {
 case class Id[A](value: A) {
   def map[B](f: A => B): Id[B] = Id(f(value))
   def flatMap[B](f: A => Id[B]): Id[B] = f(value)
-}
-
-object Reader {
-  def readerMonad[R] = new Monad[({ type f[x] = Reader[R, x] })#f] {
-    def unit[A](a: => A): Reader[R, A] = ???
-    override def flatMap[A, B](st: Reader[R, A])(
-        f: A => Reader[R, B]
-    ): Reader[R, B] = ???
-  }
 }
 
 object examples_monadic extends App {
@@ -379,6 +413,44 @@ object examples_monadic extends App {
 
     futureM
   }
+
+  object readerMonad_examples {
+    import Monad.readerMonad
+    // Laws
+    // Identity law
+    // flatMap(x)(unit) == x
+    // flatMap(unit(y))(f) == f(y)
+    // version1 declaration
+    def rm1[A]: Monad[({ type LongReader[x] = Reader[Long, x] })#LongReader] =
+      readerMonad[Long]
+
+    type LongReader[A] =
+      ({ type LongReader[x] = Reader[Long, x] })#LongReader[A]
+
+    def rm2[A]: Monad[LongReader] =
+      readerMonad_Book[Long]
+
+    val unitReader: Reader[Long, String] = rm2.unit("42-str")
+
+    val rd1: Reader[Long, String] = Reader((l: Long) => (l + 1).toString())
+
+    println(rm2.flatMap(rd1)(_ => unitReader).run(42))
+    println(rd1.run(42))
+    val f: Int => Reader[Long, Int] = x => Reader(y => y.toInt + x)
+    println(rm2.flatMap(rm2.unit(42))(f) == f(42))
+
+    val seq = rm2.sequence(List(unitReader, rd1))
+
+    println(seq.run(42)) // runs readers seq
+
+    val rM = rm2.replicateM(3, rd1)
+
+    println(rM.run(42)) // spawns results of running monad in  list of size n
+
+  }
+
+  readerMonad_examples
+
   lazy val example_115: Unit = {
 
     val futureM = futureMonad
@@ -542,7 +614,7 @@ object examples_monadic extends App {
       State { s: Long =>
         (s.toString() + "str", s + 1)
       }
-    )
+    ) // стэйт выполняется в run и реплицирутеся в размер списка replicaM
     println(
       "R2:" + r2.flow(0L).flow.flow
     ) // FlowState(List(2str, 2str, 2str),3)
@@ -580,6 +652,6 @@ object examples_monadic extends App {
 
   }
 
-  stateMonad_examples
+  // stateMonad_examples
 
 }
