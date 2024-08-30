@@ -95,7 +95,7 @@ trait Applicative[F[_]] extends Functor[F] { self =>
   def traverse[A, B](as: List[A])(f: A => F[B]): F[List[B]] =
     as.foldLeft(unit(List.empty[B])) { case (acc: F[List[B]], elem: A) =>
       map2(acc, f(elem)) { case (list, b) =>
-        b +: list
+        list :+ b
       }
     }
 
@@ -156,10 +156,22 @@ trait Applicative[F[_]] extends Functor[F] { self =>
 
 case class Tree[+A](head: A, tail: List[Tree[A]])
 
+// Making Monad a subtype of Applicative
 trait Monad[F[_]] extends Applicative[F] {
+  // A minimal implementation of Monad must implement unit and override either flatMap or join and map.
+  // minimal sets of operations that defined a Monad:
+  // - unit and flatMap
+  // - unit and compose
+  // - unit, map, and join
+  // here is example of flatMap via join
   def flatMap[A, B](ma: F[A])(f: A => F[B]): F[B] = join(map(ma)(f))
 
+  // here is example of join flatMap
   def join[A](mma: F[F[A]]): F[A] = flatMap(mma)(ma => ma)
+
+  // map via flatMap
+  override def map[A, B](fa: F[A])(f: A => B): F[B] =
+    flatMap(fa)((a: A) => unit(f(a)))
 
   def compose[A, B, C](f: A => F[B], g: B => F[C]): A => F[C] =
     a => flatMap(f(a))(g)
@@ -206,6 +218,41 @@ object Applicative {
         f: (A, B) => C
     ): Stream[C] =
       a zip b map f.tupled
+
+    /** EXERCISE 12.4 Hard:
+      *
+      * What is the meaning of streamApplicative.sequence? Specializing the
+      * signature of sequence to Stream, we have this:
+      *
+      * //TODO: more explanation
+      */
+    def sequence_explanation[A](a: List[Stream[A]]): Stream[List[A]] = {
+
+      /** при попадании в map2 будет
+        * {{{
+        *   map2(acc:Stream[List[A]], //бесконечный стрим пустых листов
+        *  next stream element стрим элементов
+        * ) { case (list,b)=> b +: list }
+        * }}}
+        * каждому элементу первого стрима, будет предоставлен пустой список.
+        * последующим стримам будут предоставлены списки уже заполненные
+        * соответсвующими элементами предидущих стримов
+        * {{{
+        *  Stream(el_0_1,el_0_2,el_0_3)
+        *  Stream(el_1_1,el_1_2,el_1_3)
+        *  Stream(el_2_1,el_2_2,el_2_3,el_2_4) ==
+        * Stream (
+        *  List(el_0_1,el_1_1,el_2_1) -- первая колонка
+        *  List(el_0_2,el_1_2,el_2_2) -- вторая колонка
+        *  List(el_0_3,el_1_3,el_2_3) -- третья колонка
+        *  el_2_4 игнорируется посколку стрим списков уже создан)
+        * }}}
+        *
+        * List(el_2_1, el_1_1, el_0_1) List(el_2_2, el_1_2, el_0_2) List(el_2_3,
+        * el_1_3, el_0_3)
+        */
+      ???
+    }
   }
 
   def validationApplicative[E]
@@ -286,4 +333,54 @@ object StateUtil {
 
   def set[S](s: S): State[S, Unit] =
     State(_ => ((), s))
+}
+
+object applicative_examples extends App {
+  import Applicative.streamApplicative
+
+  val r1: Stream[List[String]] = streamApplicative.sequence(
+    List(
+      Stream("A", "B", "C"),
+      Stream("A1", "B1", "C1"),
+      Stream("A2", "B2", "C2")
+    )
+  )
+
+  r1.foreach(println)
+  println("--------")
+
+  val r2: Stream[List[String]] =
+    streamApplicative.sequence(
+      List(
+        Stream("el_0_1", "el_0_2", "el_0_3"),
+        Stream("el_1_1", "el_1_2", "el_1_3"),
+        Stream("el_2_1", "el_2_2", "el_2_3", "el_2_4")
+      )
+    )
+
+  r2.foreach(println)
+  println("--------")
+
+  val r3: Stream[List[String]] =
+    streamApplicative.sequence(
+      List(
+        Stream("el_0_1", "el_0_2", "el_0_3", "el_0_4"),
+        Stream("el_1_1", "el_1_2", "el_1_3"),
+        Stream("el_2_1", "el_2_2", "el_2_3")
+      )
+    )
+
+  r3.foreach(println)
+  println("--------")
+  val r4: Stream[List[String]] =
+    streamApplicative.sequence(
+      List(
+        Stream("el_0_1", "el_0_2", "el_0_3", "el_0_4"),
+        Stream("el_1_1", "el_1_2"),
+        Stream("el_2_1", "el_2_2", "el_2_3")
+      )
+    )
+
+  r4.foreach(println)
+
 }
