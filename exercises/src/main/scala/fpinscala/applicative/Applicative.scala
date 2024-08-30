@@ -9,6 +9,36 @@ import monoids._
 import language.higherKinds
 import language.implicitConversions
 
+/** EXERCISE 12.2 Hard:
+  *
+  * The name applicative comes from the fact that we can formulate the
+  * Applicative interface using an alternate set of primitives, unit and the
+  * function apply, rather than unit and map2. Show that this formulation is
+  * equivalent in expressiveness by defining map2 and map in terms of unit and
+  * apply. Also establish that apply can be imple- mented in terms of map2 and
+  * unit.
+  */
+trait Applicative_122[F[_]] extends Functor[F] { self =>
+
+  def unit[A](a: => A): F[A]
+
+  // Define in terms of map2 and unit.
+  def apply_via_map2[A, B](fab: F[A => B])(fa: F[A]): F[B] =
+    map2(fab, fa) { case (f, a) =>
+      f(a)
+    }
+
+  // Define in terms of apply and unit.
+  def map[A, B](fa: F[A])(f: A => B): F[B] =
+    apply_via_map2(unit(f))(fa)
+
+  def map2[A, B, C](fa: F[A], fb: F[B])(f: (A, B) => C): F[C] = {
+    val curried: A => (B => C) = f.curried
+    val bToC: F[B => C] = apply_via_map2(unit(curried))(fa)
+    apply_via_map2(bToC)(fb)
+  }
+
+}
 trait Applicative[F[_]] extends Functor[F] { self =>
 
   /** EXERCISE 12.1
@@ -85,7 +115,9 @@ trait Applicative[F[_]] extends Functor[F] { self =>
       }
 
     }
+
   // EXERCISE 12.1
+  @annotation.nowarn
   def sequenceMap[K, V](ofa: Map[K, F[V]]): F[Map[K, V]] =
     ofa.foldLeft(unit(Map.empty[K, V])) {
       case (acc: F[Map[K, V]], (k: K, v: F[V])) =>

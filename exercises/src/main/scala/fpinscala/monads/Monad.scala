@@ -434,10 +434,10 @@ object examples_monadic extends App {
 
     val rd1: Reader[Long, String] = Reader((l: Long) => (l + 1).toString())
 
-    println(rm2.flatMap(rd1)(_ => unitReader).run(42))
-    println(rd1.run(42))
+    println("IL1:" + rm2.flatMap(rd1)(x => rm2.unit(x)).run(42) == rd1.run(42))
+
     val f: Int => Reader[Long, Int] = x => Reader(y => y.toInt + x)
-    println(rm2.flatMap(rm2.unit(42))(f) == f(42))
+    println("IL2:" + rm2.flatMap(rm2.unit(42))(f) == f(42))
 
     val seq = rm2.sequence(List(unitReader, rd1))
 
