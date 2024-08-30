@@ -22,6 +22,7 @@ trait Applicative_122[F[_]] extends Functor[F] { self =>
 
   def unit[A](a: => A): F[A]
 
+  // have to implement this according to the task, so the functions are interdependent
   // Define in terms of map2 and unit.
   def apply_via_map2[A, B](fab: F[A => B])(fa: F[A]): F[B] =
     map2(fab, fa) { case (f, a) =>
@@ -36,6 +37,31 @@ trait Applicative_122[F[_]] extends Functor[F] { self =>
     val curried: A => (B => C) = f.curried
     val bToC: F[B => C] = apply_via_map2(unit(curried))(fa)
     apply_via_map2(bToC)(fb)
+  }
+
+  /** EXERCISE 12.3
+    *
+    * The apply method is useful for implementing map3, map4, and so on, and the
+    * pattern is straightforward. Implement map3 and map4 using only unit,
+    * apply, and the curried method available on functions
+    */
+  def map3[A, B, C, D](fa: F[A], fb: F[B], fc: F[C])(
+      f: (A, B, C) => D
+  ): F[D] = {
+    val curried: A => (B => (C => D)) = f.curried
+    val bToCtoD: F[B => (C => D)] = apply_via_map2(unit(curried))(fa)
+    val cToD: F[C => D] = apply_via_map2(bToCtoD)(fb)
+    apply_via_map2(cToD)(fc)
+  }
+
+  def map4[A, B, C, D, E](fa: F[A], fb: F[B], fc: F[C], fd: F[D])(
+      f: (A, B, C, D) => E
+  ): F[E] = {
+    val curried: A => (B => (C => (D => E))) = f.curried
+    val bToCtoDtoE: F[B => (C => (D => E))] = apply_via_map2(unit(curried))(fa)
+    val cToDtoE: F[C => (D => E)] = apply_via_map2(bToCtoDtoE)(fb)
+    val dToE: F[D => E] = apply_via_map2(cToDtoE)(fc)
+    apply_via_map2(dToE)(fd)
   }
 
 }
