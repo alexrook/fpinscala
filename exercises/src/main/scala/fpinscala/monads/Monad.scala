@@ -131,7 +131,7 @@ trait Monad[M[_]] extends Functor[M] {
     * interesting results.) Implement this function, and then think about what
     * it means for various data types.
     */
-  @annotation.nowarn // unchecked suppressed for for educational purposes
+  @annotation.nowarn // unchecked suppressed for educational purposes
   def filterM[A](ms: List[A])(f: A => M[Boolean]): M[List[A]] =
     ms.foldLeft(unit(List.empty[A])) {
       //
