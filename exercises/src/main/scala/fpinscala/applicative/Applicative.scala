@@ -67,6 +67,24 @@ trait Applicative_122[F[_]] extends Functor[F] { self =>
   }
 
 }
+
+trait Applicative_Alt[F[_]] {
+  // product, map, and unit are an alternate formulation of Applicative. Can you see how map2 can be imple-
+  // mented using product and map?
+
+  def map2[A, B, C](fa: F[A], fb: F[B])(f: (A, B) => C): F[C] =
+    map(product(fa, fb)) { case (a, b) =>
+      f(a, b)
+    }
+
+  def map[A, B](fa: F[A])(f: A => B): F[B]
+
+  def unit[A](a: => A): F[A]
+
+  def product[A, B](fa: F[A], fb: F[B]): F[(A, B)]
+
+}
+
 trait Applicative[F[_]] extends Functor[F] { self =>
 
   /** EXERCISE 12.1
@@ -88,6 +106,17 @@ trait Applicative[F[_]] extends Functor[F] { self =>
   def unit[A](a: => A): F[A]
 
   def map[A, B](fa: F[A])(f: A => B): F[B] = apply(unit(f))(fa)
+
+  def map_v2[A, B](fa: F[A])(f: A => B): F[B] =
+    map2(fa, unit(f))((a, f) => f(a))
+
+  def map_v3[A, B](fa: F[A])(f: A => B): F[B] =
+    map2(fa, unit(()))((a, _) => f(a))
+  // from above
+  // {{
+  //   map2(unit(()), fa)((_,a) => a) == fa
+  //   map2(fa, unit(()))((a,_) => a) == fa
+  // }}
 
   // EXERCISE 12.1
   def sequence[A](fas: List[F[A]]): F[List[A]] =
@@ -111,7 +140,12 @@ trait Applicative[F[_]] extends Functor[F] { self =>
   def factor[A, B](fa: F[A], fb: F[B]): F[(A, B)] =
     map2(fa, fb)(_ -> _)
 
-  // EXERCISE 12.1
+  /** EXERCISE 12.1 + EXERCISE 12.8
+    *
+    * Just like we can take the product of two monoids A and B to give the
+    * monoid (A, B), we can take the product of two applicative functors.
+    * Implement this function:
+    */
   def product[G[_]](
       g: Applicative[G]
   ): Applicative[({ type LR[x] = (F[x], G[x]) })#LR] =
@@ -128,7 +162,11 @@ trait Applicative[F[_]] extends Functor[F] { self =>
       }
     }
 
-  // EXERCISE 12.1
+  /** EXERCISE 12.1 + EXERCISE 12.9 Hard:
+    *
+    * Applicative functors also compose another way! If F[_] and G[_] are
+    * applicative functors, then so is F[G[_]]. Implement this function:
+    */
   def compose[G[_]](
       g: Applicative[G]
   ): Applicative[({ type CO[x] = F[G[x]] })#CO] =
@@ -141,10 +179,20 @@ trait Applicative[F[_]] extends Functor[F] { self =>
         val gc: G[C] = g.map2(ga, gb)(f)
         self.unit(gc)
       }
-
     }
 
-  // EXERCISE 12.1
+  /** EXERCISE 12.10 Hard:
+    *
+    * Prove that {{{Applicative[({ type CO[x] = F[G[x]] })#CO]}}} composite
+    * applicative functor meets the applicative laws. This is an extremely
+    * challenging exercise. TODO: impl
+    */
+
+  /** EXERCISE 12.1 + EXERCISE 12.12
+    *
+    * On the Applicative trait, implement sequence over a Map rather than a
+    * List:
+    */
   @annotation.nowarn
   def sequenceMap[K, V](ofa: Map[K, F[V]]): F[Map[K, V]] =
     ofa.foldLeft(unit(Map.empty[K, V])) {
@@ -180,6 +228,34 @@ trait Monad[F[_]] extends Applicative[F] {
 
   override def apply[A, B](mf: F[A => B])(ma: F[A]): F[B] =
     flatMap(mf)(f => map(ma)(a => f(a)))
+
+  /** EXERCISE 12.11
+    *
+    * Try to write compose on Monad. It’s not possible, but it is instructive to
+    * attempt it and understand why this is the case.
+    */
+  def compose[G[_]](g: Monad[G]): Monad[({ type MM[x] = F[G[x]] })#MM] = {
+    val self = this
+
+    new Monad[({ type MM[x] = F[G[x]] })#MM] {
+      def unit[A](a: => A): F[G[A]] = self.unit(g.unit(a))
+
+      override def flatMap[A, B](ma: F[G[A]])(f: A => F[G[B]]): F[G[B]] =
+        self.flatMap(ma) { ga: G[A] =>
+          val r: G[F[G[B]]] = g.map(ga) { a =>
+            f(a)
+
+          }
+          // It’s not possible
+          // потому, что не возможно развернуть G[_]  в F.flatMap
+          // а также, не возможно развернуть F[_] в G.flatMap
+          ???
+
+        }
+
+    }
+  }
+
 }
 
 object Monad {
@@ -330,8 +406,10 @@ object Applicative {
 }
 
 trait Traverse[F[_]] extends Functor[F] with Foldable[F] {
+
   def traverse[G[_]: Applicative, A, B](fa: F[A])(f: A => G[B]): G[F[B]] =
     sequence(map(fa)(f))
+
   def sequence[G[_]: Applicative, A](fma: F[G[A]]): G[F[A]] =
     traverse(fma)(ma => ma)
 
@@ -377,11 +455,92 @@ trait Traverse[F[_]] extends Functor[F] with Foldable[F] {
 }
 
 object Traverse {
-  val listTraverse = ???
 
-  val optionTraverse = ???
+  /** EXERCISE 12.13
+    *
+    * Write Traverse instances for List, Option, and Tree.
+    */
+  @annotation.nowarn // for education purpose
+  val listTraverse: Traverse[List] =
+    new Traverse[List] {
 
-  val treeTraverse = ???
+      override def traverse[G[_]: Applicative, A, B](fa: List[A])(
+          f: A => G[B]
+      ): G[List[B]] = {
+        val applicativeG: Applicative[G] = implicitly[Applicative[G]]
+        fa.foldRight(applicativeG.unit(List.empty[B])) {
+          case (elem: A, acc: G[List[B]]) =>
+            applicativeG.map2(acc, f(elem)) { case (list, b) =>
+              list :+ b
+            }
+        }
+      }
+
+      def foldRight[A, B](as: List[A])(z: B)(f: (A, B) => B): B =
+        as.foldRight(z)(f)
+
+    }
+
+  val optionTraverse =
+    new Traverse[Option] {
+      def foldRight[A, B](as: Option[A])(z: B)(f: (A, B) => B): B =
+        as.map { a: A =>
+          f(a, z)
+        }.getOrElse(z)
+
+      override def traverse[G[_]: Applicative, A, B](
+          fa: Option[A]
+      )(f: A => G[B]): G[Option[B]] = {
+
+        val applicativeG = implicitly[Applicative[G]]
+        fa match {
+          case None           => applicativeG.unit(Option.empty[B])
+          case Some(value: A) => applicativeG.map(f(value))(Option.apply)
+
+        }
+      }
+    }
+
+  // case class Tree[+A](head: A, tail: List[Tree[A]])
+  val treeTraverse: Traverse[applicative.Tree] =
+    new Traverse[Tree] {
+
+      def foldRight[A, B](tree: Tree[A])(z: B)(f: (A, B) => B): B =
+        tree match {
+          case Tree(head, Nil) => f(head, z)
+          case Tree(head, second :: rest) =>
+            f(
+              head,
+              foldRight[A, B](
+                Tree(head = second.head, tail = second.tail ++ rest)
+              )(z)(f)
+            )
+        }
+
+      override def traverse[G[_]: Applicative, A, B](
+          fa: Tree[A]
+      )( // TODO:simplify via listTraverse
+          f: A => G[B]
+      ): G[Tree[B]] = {
+        val applicativeG: Applicative[G] = implicitly[Applicative[G]]
+        fa match {
+          case Tree(head, Nil) =>
+            applicativeG.map(f(head))(b => Tree(b, List.empty[Tree[B]]))
+
+          case Tree(head, second :: rest) =>
+            val headB: G[B] = f(head)
+            val newTree = Tree(second.head, second.tail ++ rest)
+            applicativeG.map2(headB, traverse(newTree)(f)) {
+              case (b, tree: Tree[B]) =>
+                Tree(
+                  head = b,
+                  tail = Tree(tree.head, List.empty[Tree[B]]) +: tree.tail
+                )
+            }
+        }
+      }
+
+    }
 }
 
 // The `get` and `set` functions on `State` are used above,
@@ -442,6 +601,18 @@ object applicative_examples extends App {
       )
     )
 
-  r4.foreach(println)
+  // r4.foreach(println)
+
+  object exercise_127 {
+
+    /** EXERCISE 12.7 Hard:
+      *
+      * Prove that all monads are applicative functors by showing that if the
+      * monad laws hold, the Monad implementations of map2 and map satisfy the
+      * applicative laws.
+      */
+
+    ??? // TODO:impl
+  }
 
 }
