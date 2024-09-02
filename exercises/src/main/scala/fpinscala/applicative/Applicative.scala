@@ -226,7 +226,7 @@ object Applicative {
       *
       * //TODO: more explanation
       */
-    def sequence_explanation[A](a: List[Stream[A]]): Stream[List[A]] = {
+    val sequence_explanation = {
 
       /** при попадании в map2 будет
         * {{{
@@ -251,7 +251,22 @@ object Applicative {
         * List(el_2_1, el_1_1, el_0_1) List(el_2_2, el_1_2, el_0_2) List(el_2_3,
         * el_1_3, el_0_3)
         */
-      ???
+      /** Again:
+        * {{{
+        *  Stream(List.empty,List.empty,List.empty,List.empty,...,,,.infinity)
+        *   zip //соединяет только те элементы которые имеют пару в другом стриме, остальные удаляет
+        *  Stream(el_0_1,el_0_2,el_0_3)
+        *   ||
+        *   Stream(List(el_0_1),List(el_0_2),List(el_0_3))
+        *   zip
+        *  Stream(el_1_1,el_1_2,el_1_3)
+        *    ||
+        *  Stream(List(el_0_1,el_1_1),List(el_0_2,el_1_2),List(el_0_3,el_1_3))
+        *   zip
+        *   ....
+        * }}}
+        */
+      "Done"
     }
   }
 
