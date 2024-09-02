@@ -181,7 +181,18 @@ trait Monad[F[_]] extends Applicative[F] {
 }
 
 object Monad {
-  def eitherMonad[E]: Monad[({ type f[x] = Either[E, x] })#f] = ???
+
+  /** EXERCISE 12.5
+    *
+    * Write a monad instance for Either.
+    */
+  def eitherMonad[E]: Monad[({ type EE[x] = Either[E, x] })#EE] =
+    new Monad[({ type EE[x] = Either[E, x] })#EE] {
+      def unit[A](a: => A): Either[E, A] = Right(a)
+      override def flatMap[A, B](ma: Either[E, A])(
+          f: A => Either[E, B]
+      ): Either[E, B] = ma flatMap f
+    }
 
   def stateMonad[S] = new Monad[({ type f[x] = State[S, x] })#f] {
     def unit[A](a: => A): State[S, A] = State(s => (a, s))
@@ -257,10 +268,10 @@ object Applicative {
         *   zip //соединяет только те элементы которые имеют пару в другом стриме, остальные удаляет
         *  Stream(el_0_1,el_0_2,el_0_3)
         *   ||
-        *   Stream(List(el_0_1),List(el_0_2),List(el_0_3))
+        *  Stream(List(el_0_1),List(el_0_2),List(el_0_3))
         *   zip
         *  Stream(el_1_1,el_1_2,el_1_3)
-        *    ||
+        *   ||
         *  Stream(List(el_0_1,el_1_1),List(el_0_2,el_1_2),List(el_0_3,el_1_3))
         *   zip
         *   ....
