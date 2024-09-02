@@ -10,6 +10,7 @@ import language.higherKinds
 import language.implicitConversions
 import scala.util.control.NonFatal
 import fpinscala.datastructures.List.tail
+import fpinscala.monads.Id
 
 /** EXERCISE 12.2 Hard:
   *
@@ -395,6 +396,19 @@ object Applicative {
 
     }
 
+  implicit val idApplicative: Applicative[Id] = // for EXERCISE 12.14
+    new Applicative[Id] {
+      def unit[A](a: => A): Id[A] = Id(a)
+      override def apply[A, B](fab: Id[A => B])(fa: Id[A]): Id[B] =
+        Id(fab.value(fa.value))
+
+      override def map2[A, B, C](fa: Id[A], fb: Id[B])(f: (A, B) => C): Id[C] =
+        Id(
+          f(fa.value, fb.value)
+        )
+
+    }
+
   type Const[A, B] = A
 
   @annotation.nowarn
@@ -413,14 +427,36 @@ trait Traverse[F[_]] extends Functor[F] with Foldable[F] {
   def sequence[G[_]: Applicative, A](fma: F[G[A]]): G[F[A]] =
     traverse(fma)(ma => ma)
 
-  def map[A, B](fa: F[A])(f: A => B): F[B] = ???
+  /** EXERCISE 12.14 Hard:
+    *
+    * Implement map in terms of traverse as a method on Traverse[F]. This estab-
+    * lishes that Traverse is an extension of Functor and that the traverse
+    * function is a generalization of map (for this reason we sometimes call
+    * these traversable functors). Note that in implementing map, you can call
+    * traverse with your choice of Applicative[G].
+    * {{{
+    *  trait Traverse[F[_]] extends Functor[F] {
+    *   ...
+    *  }
+    * }}}
+    */
 
-  import Applicative._
+  def map[A, B](fa: F[A])(f: A => B): F[B] = {
+    import Applicative._
+    traverse[Id, A, B](fa) { a =>
+      val idAppl: Applicative[Id] = implicitly[Applicative[Id]]
+      idAppl.unit(f(a))
+      // or just :-) :
+      // Id(f(a))
+    }.value
+  }
 
-  override def foldMap[A, B](as: F[A])(f: A => B)(mb: Monoid[B]): B =
+  override def foldMap[A, B](as: F[A])(f: A => B)(mb: Monoid[B]): B = {
+    import Applicative._
     traverse[({ type f[x] = Const[B, x] })#f, A, Nothing](as)(f)(
       monoidApplicative(mb)
     )
+  }
 
   def traverseS[S, A, B](fa: F[A])(f: A => State[S, B]): State[S, F[B]] =
     traverse[({ type f[x] = State[S, x] })#f, A, B](fa)(f)(Monad.stateMonad)
