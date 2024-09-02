@@ -8,6 +8,8 @@ import StateUtil._ // defined at bottom of this file
 import monoids._
 import language.higherKinds
 import language.implicitConversions
+import scala.util.control.NonFatal
+import fpinscala.datastructures.List.tail
 
 /** EXERCISE 12.2 Hard:
   *
@@ -281,8 +283,41 @@ object Applicative {
     }
   }
 
+  /** EXERCISE 12.6
+    *
+    * Write an Applicative instance for Validation that accumulates errors in
+    * Failure. Note that in the case of Failure there’s always at least one
+    * error, stored in head. The rest of the errors accumulate in the tail.
+    */
   def validationApplicative[E]
-      : Applicative[({ type f[x] = Validation[E, x] })#f] = ???
+      : Applicative[({ type VV[x] = Validation[E, x] })#VV] =
+    new Applicative[({ type VV[x] = Validation[E, x] })#VV] {
+      def unit[A](a: => A): Validation[E, A] =
+        try {
+          Success(a)
+        } catch {
+          case NonFatal(e: E) =>
+            Failure(head = e, tail = Vector.empty[E])
+        }
+
+      override def map2[A, B, C](fa: Validation[E, A], fb: Validation[E, B])(
+          f: (A, B) => C
+      ): Validation[E, C] =
+        fa match {
+          case err @ Failure(faHead, faTail) =>
+            fb match {
+              case Failure(fbHead, fbTail) =>
+                Failure(faHead, faTail ++ (fbHead +: fbTail))
+              case _ => err
+            }
+          case Success(a) =>
+            fb match {
+              case Success(b)      => Success(f(a, b))
+              case err: Failure[_] => err
+            }
+        }
+
+    }
 
   type Const[A, B] = A
 
