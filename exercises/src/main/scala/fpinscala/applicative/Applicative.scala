@@ -438,9 +438,12 @@ object Applicative {
 }
 
 trait Traverse[F[_]] extends Functor[F] with Foldable[F] {
+  // it's implemented in terms each other for example purposes
+  // in the real traverse instances we should implement the traverse func
+  // def traverse[G[_]: Applicative, A, B](fa: F[A])(f: A => G[B]): G[F[B]] =
+  //   sequence(map(fa)(f))
 
-  def traverse[G[_]: Applicative, A, B](fa: F[A])(f: A => G[B]): G[F[B]] =
-    sequence(map(fa)(f))
+  def traverse[G[_]: Applicative, A, B](fa: F[A])(f: A => G[B]): G[F[B]]
 
   def sequence[G[_]: Applicative, A](fma: F[G[A]]): G[F[A]] =
     traverse(fma)(ma => ma)
@@ -535,6 +538,11 @@ trait Traverse[F[_]] extends Functor[F] with Foldable[F] {
       () -> b
     }._2
 
+  override def foldRight[A, B](fa: F[A])(z: B)(f: (A, B) => B): B =
+    foldLeft(reverse(fa))(z) { case (b, a) =>
+      f(a, b)
+    }
+
   /** EXERCISE 12.18
     *
     * Use applicative functor products to write the fusion of two traversals.
@@ -548,20 +556,36 @@ trait Traverse[F[_]] extends Functor[F] with Foldable[F] {
 
     type Product[X] = (G[X], H[X])
 
-    val prod: Applicative[Product] =
+    val gAndHproductApplicative: Applicative[Product] =
       gApplicative.product(hApplicative)
 
     val ret: Product[F[B]] =
       traverse[Product, A, B](fa) { case a =>
         (f(a), g(a))
-      }(prod)
+      }(gAndHproductApplicative)
 
     ret
   }
 
+  /** EXERCISE 12.19
+    *
+    * Implement the composition of two Traverse instances.
+    */
   def compose[G[_]](implicit
-      G: Traverse[G]
-  ): Traverse[({ type f[x] = F[G[x]] })#f] = ???
+      gTraverse: Traverse[G]
+  ): Traverse[({ type FG[x] = F[G[x]] })#FG] = {
+    val self = this
+    new Traverse[({ type FG[x] = F[G[x]] })#FG] {
+      override def traverse[M[_]: Applicative, A, B](fa: F[G[A]])(
+          f: A => M[B]
+      ): M[F[G[B]]] = {
+        self.traverse(fa) { ga: G[A] =>
+          gTraverse.traverse(ga)(f)
+        }
+      }
+    }
+  }
+
 }
 
 object Traverse {
@@ -586,14 +610,14 @@ object Traverse {
         }
       }
 
-      def foldRight[A, B](as: List[A])(z: B)(f: (A, B) => B): B =
+      override def foldRight[A, B](as: List[A])(z: B)(f: (A, B) => B): B =
         as.foldRight(z)(f)
 
     }
 
   val optionTraverse =
     new Traverse[Option] {
-      def foldRight[A, B](as: Option[A])(z: B)(f: (A, B) => B): B =
+      override def foldRight[A, B](as: Option[A])(z: B)(f: (A, B) => B): B =
         as.map { a: A =>
           f(a, z)
         }.getOrElse(z)
@@ -615,7 +639,7 @@ object Traverse {
   val treeTraverse: Traverse[applicative.Tree] =
     new Traverse[Tree] {
 
-      def foldRight[A, B](tree: Tree[A])(z: B)(f: (A, B) => B): B =
+      override def foldRight[A, B](tree: Tree[A])(z: B)(f: (A, B) => B): B =
         tree match {
           case Tree(head, Nil) => f(head, z)
           case Tree(head, second :: rest) =>
