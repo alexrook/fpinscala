@@ -279,11 +279,28 @@ object Monad {
       st flatMap f
   }
 
+  /** EXERCISE 12.20 Hard:
+    *
+    * Implement the composition of two monads where one of them is traversable.
+    */
+
   def composeM[F[_], N[_]](implicit
-      F: Monad[F],
-      N: Monad[N],
-      T: Traverse[N]
-  ): Monad[({ type f[x] = F[N[x]] })#f] = ???
+      fm: Monad[F],
+      nm: Monad[N],
+      traversableN: Traverse[N]
+  ): Monad[({ type f[x] = F[N[x]] })#f] =
+    new Monad[({ type f[x] = F[N[x]] })#f] {
+      def unit[A](a: => A): F[N[A]] = fm.unit(nm.unit(a))
+
+      override def flatMap[A, B](ma: F[N[A]])(f: A => F[N[B]]): F[N[B]] =
+        fm.flatMap(ma) { na: N[A] =>
+          val r: F[N[N[B]]] = traversableN.traverse(na)(f)
+          fm.map(r) { nnb =>
+            nm.join(nnb)
+          }
+        }
+
+    }
 }
 
 sealed trait Validation[+E, +A]
