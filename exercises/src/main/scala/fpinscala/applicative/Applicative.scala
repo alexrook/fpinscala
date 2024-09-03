@@ -521,7 +521,19 @@ trait Traverse[F[_]] extends Functor[F] with Foldable[F] {
   def reverse[A](fa: F[A]): F[A] =
     traverse[Id, A, A](fa)(Id.apply).value
 
-  override def foldLeft[A, B](fa: F[A])(z: B)(f: (B, A) => B): B = ???
+  def reverse_BookV[A](fa: F[A]): F[A] =
+    mapAccum(fa, toList(fa).reverse)((_, acc) => (acc.head, acc.tail))._1
+
+  /** EXERCISE 12.17
+    *
+    * Use mapAccum to give a default implementation of foldLeft for the Traverse
+    * trait.
+    */
+  override def foldLeft[A, B](fa: F[A])(z: B)(f: (B, A) => B): B =
+    mapAccum(fa, z) { case (a: A, acc: B) =>
+      val b = f(acc, a)
+      () -> b
+    }._2
 
   def fuse[G[_], H[_], A, B](fa: F[A])(f: A => G[B], g: A => H[B])(implicit
       G: Applicative[G],
