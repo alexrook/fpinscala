@@ -535,10 +535,29 @@ trait Traverse[F[_]] extends Functor[F] with Foldable[F] {
       () -> b
     }._2
 
+  /** EXERCISE 12.18
+    *
+    * Use applicative functor products to write the fusion of two traversals.
+    * This function will, given two functions f and g, traverse fa a single
+    * time, collecting the results of both functions at once.
+    */
   def fuse[G[_], H[_], A, B](fa: F[A])(f: A => G[B], g: A => H[B])(implicit
-      G: Applicative[G],
-      H: Applicative[H]
-  ): (G[F[B]], H[F[B]]) = ???
+      gApplicative: Applicative[G],
+      hApplicative: Applicative[H]
+  ): (G[F[B]], H[F[B]]) = {
+
+    type Product[X] = (G[X], H[X])
+
+    val prod: Applicative[Product] =
+      gApplicative.product(hApplicative)
+
+    val ret: Product[F[B]] =
+      traverse[Product, A, B](fa) { case a =>
+        (f(a), g(a))
+      }(prod)
+
+    ret
+  }
 
   def compose[G[_]](implicit
       G: Traverse[G]
