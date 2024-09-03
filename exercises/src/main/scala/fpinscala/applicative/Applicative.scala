@@ -3,8 +3,6 @@ package applicative
 
 import monads.Functor
 import state._
-import State._
-import StateUtil._ // defined at bottom of this file
 import monoids._
 import language.higherKinds
 import language.implicitConversions
@@ -399,6 +397,7 @@ object Applicative {
   implicit val idApplicative: Applicative[Id] = // for EXERCISE 12.14
     new Applicative[Id] {
       def unit[A](a: => A): Id[A] = Id(a)
+
       override def apply[A, B](fab: Id[A => B])(fa: Id[A]): Id[B] =
         Id(fab.value(fa.value))
 
@@ -411,11 +410,30 @@ object Applicative {
 
   type Const[A, B] = A
 
-  @annotation.nowarn
-  implicit def monoidApplicative[M](M: Monoid[M]) =
-    new Applicative[({ type f[x] = Const[M, x] })#f] {
-      def unit[A](a: => A): M = M.zero
-      override def apply[A, B](m1: M)(m2: M): M = M.op(m1, m2)
+  @annotation.nowarn // книжный вариант
+  implicit def monoidApplicative[M](monoid: Monoid[M]) =
+    new Applicative[({ type ConstM[x] = Const[M, x] })#ConstM] {
+      def unit[A](a: => A): M = monoid.zero
+
+      override def apply[A, B](m1: M)(m2: M): M = monoid.op(m1, m2)
+
+    }
+
+  /** Посколку конструктор типа Const[M, A],
+    *
+    * игнорирует свой второй аргумент типа(A)
+    *
+    * то выражение Const[M, A] == M таким образом выражение
+    * monoidApplicative_Explanation можно заменить на monoidApplicative
+    */
+  def monoidApplicative_Explanation[M](monoid: Monoid[M]) =
+    new Applicative[({ type ConstM[x] = Const[M, x] })#ConstM] {
+      def unit[A](a: => A): Const[M, A] = monoid.zero
+
+      override def apply[A, B](m1: Const[M, A => B])(
+          m2: Const[M, A]
+      ): Const[M, B] = monoid.op(m1, m2)
+
     }
 }
 
@@ -453,15 +471,31 @@ trait Traverse[F[_]] extends Functor[F] with Foldable[F] {
 
   override def foldMap[A, B](as: F[A])(f: A => B)(mb: Monoid[B]): B = {
     import Applicative._
-    traverse[({ type f[x] = Const[B, x] })#f, A, Nothing](as)(f)(
-      monoidApplicative(mb)
+    traverse[({ type f[x] = Const[B, x] })#f, A, B](as)(f)(
+      monoidApplicative(
+        mb // здесь преобразование monoidApplicative(mb) для демонстрации
+      )
     )
+    // можно упростить до
+    // traverse[({ type f[x] = Const[B, x] })#f, A, Nothing](as)(f)(mb)
+
   }
 
   def traverseS[S, A, B](fa: F[A])(f: A => State[S, B]): State[S, F[B]] =
     traverse[({ type f[x] = State[S, x] })#f, A, B](fa)(f)(Monad.stateMonad)
 
-  def mapAccum[S, A, B](fa: F[A], s: S)(f: (A, S) => (B, S)): (F[B], S) =
+  def zipWithIndex_V1[A](ta: F[A]): F[(A, Int)] = {
+    import StateUtil._
+    traverseS(ta)((a: A) =>
+      (for {
+        i <- get[Int]
+        _ <- set(i + 1)
+      } yield (a, i))
+    ).run(0)._1
+  }
+
+  def mapAccum[S, A, B](fa: F[A], s: S)(f: (A, S) => (B, S)): (F[B], S) = {
+    import StateUtil._
     traverseS(fa)((a: A) =>
       (for {
         s1 <- get[S]
@@ -469,6 +503,7 @@ trait Traverse[F[_]] extends Functor[F] with Foldable[F] {
         _ <- StateUtil.set(s2)
       } yield b)
     ).run(s)
+  }
 
   override def toList[A](fa: F[A]): List[A] =
     mapAccum(fa, List[A]())((a, s) => ((), a :: s))._2.reverse
@@ -476,7 +511,15 @@ trait Traverse[F[_]] extends Functor[F] with Foldable[F] {
   def zipWithIndex[A](fa: F[A]): F[(A, Int)] =
     mapAccum(fa, 0)((a, s) => ((a, s), s + 1))._1
 
-  def reverse[A](fa: F[A]): F[A] = ???
+  /** EXERCISE 12.16
+    *
+    * There’s an interesting consequence of being able to turn any traversable
+    * functor into a reversed list—we can write, once and for all, a function to
+    * reverse any traversable functor! Write this function, and think about what
+    * it means for List, Tree, and other traversable functors.
+    */
+  def reverse[A](fa: F[A]): F[A] =
+    traverse[Id, A, A](fa)(Id.apply).value
 
   override def foldLeft[A, B](fa: F[A])(z: B)(f: (B, A) => B): B = ???
 
