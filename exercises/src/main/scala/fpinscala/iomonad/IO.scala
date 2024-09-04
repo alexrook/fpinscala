@@ -84,7 +84,7 @@ object IO1 {
     sealed class IORef[A](var value: A) {
       def set(a: A): IO[A] = IO { value = a; a }
       def get: IO[A] = IO { value }
-      def modify(f: A => A): IO[A] = get(a => set(f(a)))
+      def modify(f: A => A): IO[A] = ??? // get(a => set(f(a)))
     }
 
   }
@@ -409,15 +409,41 @@ object IO3 {
       override def map[A, B](a: Free[F, A])(f: A => B): Free[F, B] =
         flatMap(a)(f andThen (b => unit(b)))
 
-      
-
       def unit[A](a: => A): Free[F, A] = Return(a)
 
     }
 
   // Exercise 2: Implement a specialized `Function0` interpreter.
-  // @annotation.tailrec
-  def runTrampoline[A](a: Free[Function0, A]): A = ???
+  /** EXERCISE 13.2
+    *
+    * Implement a specialized tail-recursive interpreter, runTrampoline, for
+    * running a Free[Function0,A].
+    */
+  @annotation.tailrec
+  def runTrampoline[A](a: Free[Function0, A]): A =
+    a match {
+      case Return(a) => a
+      case Suspend(s) =>
+        val f: () => A = s // f is just an alias
+        f()
+      case FlatMap(s, f) =>
+        val head: Free[Function0, Any] = s
+        val tail: Any => Free[Function0, A] = f
+        runTrampoline(s.flatMap(tail))
+    }
+
+  @annotation.tailrec
+  def runTrampoline_BookV[A](a: Free[Function0, A]): A = (a) match {
+    case Return(a)  => a
+    case Suspend(r) => r()
+    case FlatMap(x, f) =>
+      x match {
+        case Return(a)  => runTrampoline_BookV { f(a) }
+        case Suspend(r) => runTrampoline_BookV { f(r()) }
+        case FlatMap(a0, g) =>
+          runTrampoline_BookV { a0 flatMap { a0 => g(a0) flatMap f } }
+      }
+  }
 
   // Exercise 3: Implement a `Free` interpreter which works for any `Monad`
   def run[F[_], A](a: Free[F, A])(implicit F: Monad[F]): F[A] = ???
